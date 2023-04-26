@@ -1,0 +1,13 @@
+[
+    {"lang_type": "日本語"}, 
+    {"title_newgame": "ゲームの新規開始"}, 
+    {"title_loadgame": "ゲームの再開"}, 
+    {"title_config": "設定"}, 
+    {"title_credit": "クレジット"}, 
+    {"title_exit": "ゲームを終了する"}, 
+    {"config_audio_vol": "音量(音楽)"}, 
+    {"config_sound_vol": "音量(効果音)"}, 
+    {"config_show_debug": "デバッグ情報の表示"}, 
+    {"config_language": "言語"}, 
+    {"config_quit": "タイトルへ戻る"}
+]

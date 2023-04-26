@@ -1,0 +1,30 @@
+[package]
+name = "ferris-shooting"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+
+[profile.dev]
+opt-level = 1
+
+[dependencies.tm-wg-wrapper]
+git = "https://github.com/TunamayoDX4/tm-wg-wrapper"
+
+[dependencies.strum]
+version = "0.24"
+features = ["derive"]
+
+[dependencies]
+rand = "0.8"
+rand_distr = "0.4"
+rand_pcg = "0.3"
+once_cell = "1.17"
+pollster = "0.3"
+chrono = "0.4"
+log = "0.4"
+fern = "0.6"
