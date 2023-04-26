@@ -8,7 +8,7 @@ pub enum GearGunType {
     GutlingGun, 
     ShotGun, 
     RifleCannon, 
-    Howitzer, 
+    Grenade, 
 }
 impl GearGunType {
     pub fn weight(&self) -> f32 { match self {
@@ -17,7 +17,7 @@ impl GearGunType {
         GearGunType::GutlingGun => 1.0,
         GearGunType::ShotGun => 1.0,
         GearGunType::RifleCannon => 12.0,
-        GearGunType::Howitzer => 32.0, 
+        GearGunType::Grenade => 7.5, 
     } }
 
     pub fn size(&self) -> nalgebra::Vector2<f32> { match self {
@@ -26,7 +26,7 @@ impl GearGunType {
         GearGunType::GutlingGun => [10., 10.],
         GearGunType::ShotGun => [10., 10.],
         GearGunType::RifleCannon => [32., 32.],
-        GearGunType::Howitzer => [96., 96.], 
+        GearGunType::Grenade => [24., 24.], 
     }.into()}
 
     /// 初速の計算
@@ -39,7 +39,7 @@ impl GearGunType {
             Self::GutlingGun => 1800., 
             Self::ShotGun => 620., 
             Self::RifleCannon => 1800., 
-            Self::Howitzer => 480., 
+            Self::Grenade => 520., 
         } 
     }
 
@@ -53,7 +53,7 @@ impl GearGunType {
             Self::GutlingGun => 12.8, 
             Self::ShotGun => 30., 
             Self::RifleCannon => 1.25, 
-            Self::Howitzer => 0.625, 
+            Self::Grenade => 10.25, 
         })
     }
 
@@ -63,18 +63,18 @@ impl GearGunType {
         Self::MachineCannon => Self::GutlingGun, 
         Self::GutlingGun => Self::ShotGun, 
         Self::ShotGun => Self::RifleCannon, 
-        Self::RifleCannon => Self::Howitzer, 
-        Self::Howitzer => Self::MachineGun, 
+        Self::RifleCannon => Self::Grenade, 
+        Self::Grenade => Self::MachineGun, 
     }; }
 
     /// 前にシフト
     fn shift_back(&mut self) { *self = match self {
-        Self::MachineGun => Self::Howitzer, 
+        Self::MachineGun => Self::Grenade, 
         Self::MachineCannon => Self::MachineGun, 
         Self::GutlingGun => Self::MachineCannon, 
         Self::ShotGun => Self::GutlingGun, 
         Self::RifleCannon => Self::ShotGun, 
-        Self::Howitzer => Self::RifleCannon, 
+        Self::Grenade => Self::RifleCannon, 
     }; }
 
     /// クールタイム
@@ -84,7 +84,7 @@ impl GearGunType {
         Self::GutlingGun => 1. / 60., 
         Self::ShotGun => 1. / 2., 
         Self::RifleCannon => 1. / 3., 
-        Self::Howitzer => 1. / 3., 
+        Self::Grenade => 1. / 12., 
     } }
 
     /// 発射数
@@ -94,7 +94,7 @@ impl GearGunType {
         GearGunType::GutlingGun => 3,
         GearGunType::ShotGun => 40,
         GearGunType::RifleCannon => 1,
-        GearGunType::Howitzer => 1, 
+        GearGunType::Grenade => 2, 
     } }
 }
 
