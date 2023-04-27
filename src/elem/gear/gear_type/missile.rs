@@ -137,7 +137,7 @@ impl GearMissileType {
     }}
 
     pub fn velocity0 (&self) -> f32 { match self {
-        GearMissileType::SwarmMissile(_) => 320.,
+        GearMissileType::SwarmMissile(_) => 720.,
     } }
 
     pub(super) fn angle_diffuse(
@@ -165,7 +165,7 @@ impl GearMissileType {
     } }
 
     fn cool_time_sec(&self) -> f32 { match self {
-        GearMissileType::SwarmMissile(_) => 2.,
+        GearMissileType::SwarmMissile(_) => 1. / 3.,
     }}
 
     fn shoot_count(&self) -> u32 { match self {

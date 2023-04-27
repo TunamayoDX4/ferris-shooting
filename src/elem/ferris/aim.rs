@@ -52,6 +52,7 @@ impl Aim {
         if self.push_autoaim.get_trig_count() == 1 && self.aiming_target.is_none() {
             enemies.iter()
                 .map(|(idx, e)| (idx, e.ident, e))
+                .filter(|(_, _, e)| physic_body::aabb(self, *e))
                 .fold(None, |
                     i: Option<(usize, u64, f32, &enemy::Enemy)>, (
                         idx, 
