@@ -44,9 +44,23 @@ impl GearGunType {
     }
 
     /// 拡散の演算
-    pub(super) fn diffuse(
+    pub(super) fn angle_diffuse(
         &self, 
     ) -> Option<f32> { 
+        Some(match self {
+            Self::MachineGun => 5., 
+            Self::MachineCannon => 2.5, 
+            Self::GutlingGun => 12.8, 
+            Self::ShotGun => 30., 
+            Self::RifleCannon => 1.25, 
+            Self::Grenade => 10.25, 
+        })
+    }
+
+    /// 初速の拡散の演算
+    pub(super) fn vel_diffuse(
+        &self, 
+    ) -> Option<f32> {
         Some(match self {
             Self::MachineGun => 5., 
             Self::MachineCannon => 2.5, 

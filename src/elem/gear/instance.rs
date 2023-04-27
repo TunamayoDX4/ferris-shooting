@@ -59,7 +59,7 @@ impl GearInstance {
 
             // 初速・角度の計算
             let vel = gear_type.velocity0(speed_ratio, diffuse_ratio);
-            let rotation = rotation + gear_type.diffuse(diffuse_ratio).unwrap_or(0.);
+            let rotation = rotation + gear_type.angle_diffuse(diffuse_ratio).unwrap_or(0.);
             let (vel, rotation) = if let Some(
                 vel0
             ) = velocity {
@@ -74,19 +74,21 @@ impl GearInstance {
                 (vel, rotation)
             };
             self.gear.push(Gear {
+                pbody: GearPhysicBody { 
+                    position, 
+                    velocity: [
+                        vel * rotation.cos(), 
+                        vel * rotation.sin()
+                    ].into(), 
+                    vel, 
+                    rotation, 
+                    render_rotation: crate::RNG.with(
+                        |r| (**r).borrow_mut()
+                            .gen_range(-std::f32::consts::PI..std::f32::consts::PI)
+                    ), 
+                    render_rotation_speed: 0., 
+                }, 
                 gear_type, 
-                position, 
-                rotation, 
-                vel,
-                velocity: [
-                    vel * rotation.cos(), 
-                    vel * rotation.sin(), 
-                ].into(),
-                render_rotation: crate::RNG.with(
-                    |r| (**r).borrow_mut()
-                        .gen_range(0.0..std::f32::consts::PI * 2.)
-                ),
-                render_rotation_speed: 0., 
             });
         }
     }

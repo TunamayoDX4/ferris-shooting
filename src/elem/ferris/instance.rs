@@ -13,6 +13,7 @@ impl FerrisInstance {
             velocity: [0., 0.].into(),
             control: Default::default(),
             gear: gear::gear_type::gun::GearGun::new(), 
+            gear_ms: gear::gear_type::missile::GearMissile::new(), 
         };
         let aim = aim::Aim {
             prev_position: [0., 0.].into(), 
@@ -45,10 +46,10 @@ impl FerrisInstance {
         button: MouseButton, 
         state: ElementState, 
     ) {
+        self.ferris.manip_mut(|f| {
+            f.mouse_input(button, state)
+        });
         match button {
-            MouseButton::Left => self.ferris.manip_mut(|f| {
-                f.control.shoot_mb.trigger(state);
-            }).unwrap_or(()), 
             MouseButton::Right => self.aim.manip_mut(|a| {
                 a.push_autoaim.trigger(state);
             }).unwrap_or(()), 

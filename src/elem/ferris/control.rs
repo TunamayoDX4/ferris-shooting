@@ -9,6 +9,7 @@ pub struct FerrisControl {
     pub mouse_track: crate::util::Latch, 
     pub shoot: crate::util::Trigger, 
     pub shoot_mb: crate::util::Trigger, 
+    pub shoot_ms: crate::util::Trigger, 
     pub change_gunmode: crate::util::RevCtrl, 
 }
 impl FerrisControl {
@@ -21,6 +22,7 @@ impl FerrisControl {
         self.shoot.update();
         self.change_gunmode.update();
         self.shoot_mb.update();
+        self.shoot_ms.update();
     }
 }
 
@@ -56,6 +58,16 @@ impl Ferris {
             crate::util::RevMode::Forward, state
         ), 
         VirtualKeyCode::X => self.control.mouse_track.trigger(state), 
+        _ => {}, 
+    }}
+
+    pub fn mouse_input(
+        &mut self, 
+        button: MouseButton, 
+        state: ElementState, 
+    ) { match button {
+        MouseButton::Left => self.control.shoot_mb.trigger(state),
+        MouseButton::Middle => self.control.shoot_ms.trigger(state), 
         _ => {}, 
     }}
 }

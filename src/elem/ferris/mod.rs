@@ -15,6 +15,7 @@ pub struct Ferris {
     pub velocity: nalgebra::Vector2<f32>, 
     pub control: control::FerrisControl, 
     pub gear: gear::gear_type::gun::GearGun, 
+    pub gear_ms: gear::gear_type::missile::GearMissile, 
 }
 impl Ferris {
     fn moving(
@@ -126,6 +127,22 @@ impl Ferris {
         );
     }
 
+    /// ミサイルの更新処理
+    fn missile(
+        &mut self, 
+        cycle: &CycleMeasure, 
+        gear: &mut gear::instance::GearInstance, 
+    ) {
+        self.gear_ms.update(
+            cycle, 
+            self.position, 
+            self.rotation + std::f32::consts::PI * 0.5, 
+            self.velocity, 
+            self.control.shoot_ms.is_triggered(), 
+            gear
+        );
+    }
+
     /// 更新処理
     pub fn update(
         &mut self, 
@@ -138,5 +155,6 @@ impl Ferris {
         self.moving(cycle, varea);
         self.rotating(cycle, aim);
         self.gun(cycle, gear);
+        self.missile(cycle, gear);
     }
 }

@@ -6,18 +6,16 @@ pub mod gear_type;
 pub mod body;
 pub mod instance;
 
-pub struct Gear {
+pub struct GearPhysicBody {
     position: nalgebra::Point2<f32>, 
     velocity: nalgebra::Vector2<f32>, 
     vel: f32, 
     rotation: f32, 
     render_rotation: f32, 
     render_rotation_speed: f32, 
-    gear_type: gear_type::GearType, 
 }
-impl Gear {
+impl GearPhysicBody {
 
-    /// 移動処理
     fn moving(
         &mut self, 
         cycle: &CycleMeasure, 
@@ -30,23 +28,60 @@ impl Gear {
         self.velocity = self.position - prev_position;
     }
 
-    /// 生存チェック処理
     fn alive(
         &self, 
         varea: &VisibleField, 
+        gear_type: &gear_type::GearType, 
     ) -> bool {
-        varea.in_visible(self.position, self.gear_type.size())
+        varea.in_visible(self.position, gear_type.size())
     }
 
-    /// 描画部の更新
     fn render_update(
         &mut self, 
         cycle: &CycleMeasure, 
     ) {
-        self.render_rotation += self.render_rotation_speed * cycle.dur;
+        self.render_rotation += self.render_rotation_speed * cycle.dur
+    }
+}
+impl physic_body::PhysicBody for GearPhysicBody {
+    fn position(&self) -> nalgebra::Point2<f32> {
+        self.position
     }
 
-    /// 敵への衝突処理
+    fn size(&self) -> nalgebra::Vector2<f32> {
+        [32., 32.].into()
+    }
+
+    fn rotation(&self) -> f32 {
+        self.rotation
+    }
+
+    fn velocity(&self) -> nalgebra::Vector2<f32> {
+        self.velocity
+    }
+}
+
+pub struct Gear {
+    pbody: GearPhysicBody, 
+    gear_type: gear_type::GearType, 
+}
+impl Gear {
+
+    /// 更新処理
+    pub fn update(
+        &mut self, 
+        cycle: &CycleMeasure, 
+        varea: &VisibleField, 
+        enemies: &mut enemy::instance::EnemyInstance, 
+    ) -> bool {
+        self.pbody.moving(cycle);
+        self.pbody.render_update(cycle);
+        self.gear_type.seek(&self.pbody, &enemies.enemies);
+        self.gear_type.tracking(&mut self.pbody, cycle);
+
+        self.pbody.alive(varea, &self.gear_type) && !self.coll_enemy(enemies)
+    }
+
     fn coll_enemy(
         &self, 
         enemies: &mut enemy::instance::EnemyInstance, 
@@ -67,19 +102,6 @@ impl Gear {
             }
             false
         })
-    }
-
-    /// 更新処理
-    pub fn update(
-        &mut self, 
-        cycle: &CycleMeasure, 
-        varea: &VisibleField, 
-        enemies: &mut enemy::instance::EnemyInstance, 
-    ) -> bool {
-        self.moving(cycle);
-        self.render_update(cycle);
-
-        self.alive(varea) && !self.coll_enemy(enemies)
     }
 
 }

@@ -32,11 +32,11 @@ impl EnemyInstance {
     ) {
         let (chance, spawn_range) = crate::RNG.with(|r| {
             let mut r = (**r).borrow_mut();
-            let chance = r.gen_range(0..30);
+            let chance = r.gen_range(0..100);
             let spawn_range = r.gen_range(0.0..1.0);
             (chance, spawn_range)
         });
-        if 28 < chance {
+        if chance < 2 {
             let enemy_form = enemy_type::formation::EnemyFormation::new(
                 {
                     let area = varea.visible_area();

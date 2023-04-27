@@ -7,7 +7,7 @@ pub mod instance;
 pub struct Enemy {
     pub ident: u64, 
     pub health: u32, 
-    position: nalgebra::Point2<f32>, 
+    pub position: nalgebra::Point2<f32>, 
     rotation: f32, 
     render_rotation: f32, 
     render_rot_speed: f32, 
