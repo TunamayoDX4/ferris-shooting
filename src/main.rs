@@ -1,63 +1,60 @@
-type ULazy<T> = once_cell::unsync::Lazy<T>;
 use std::cell::RefCell;
 use rand::SeedableRng;
-use tm_wg_wrapper::prelude::*;
+use rand_pcg::Pcg64;
 
+type ULazy<T> = once_cell::unsync::Lazy<T>;
 thread_local! {
-    pub static RNG: ULazy<RefCell<rand_pcg::Pcg64>> = ULazy::new(||
-        RefCell::new(
-            rand_pcg::Pcg64::from_entropy()
-        )
+    pub static RNG: ULazy<RefCell<Pcg64>> = ULazy::new(||
+        RefCell::new(Pcg64::from_entropy())
     );
 }
+
+use tm_wg_wrapper::prelude::*;
 
 pub mod log;
 pub mod renderer;
 
-pub mod old;
-
-pub mod elem;
-
-pub mod util;
-
-/// Ferris Shootingのフレーム
 pub struct FerrisShooting {
     renderer: renderer::FSRenderer, 
-    element: elem::FSElement, 
+    unlock_mouse: control::Latch, 
+    vfield: simple2d::types::VisibleField, 
     cycle: cycle_measure::CycleMeasure, 
-    visible_field: simple2d::types::VisibleField, 
-    mouse_unlock: util::Latch, 
 }
 impl Frame for FerrisShooting {
     type Initializer = ();
 
     fn window_builder() -> winit::window::WindowBuilder {
         winit::window::WindowBuilder::new()
-            .with_title("Ferris Shooting")
-            .with_inner_size(winit::dpi::PhysicalSize::new(640, 960))
-            .with_active(true)
+            .with_title("Ferris shooting")
             .with_resizable(false)
+            .with_active(true)
+            .with_inner_size(winit::dpi::PhysicalSize::new(1280, 720))
     }
 
     fn new(
-        _initializer: Self::Initializer, 
+        initializer: Self::Initializer, 
+        window: &winit::window::Window, 
         gfx: &tm_wg_wrapper::ctx::gfx::GfxCtx, 
-        _sfx: &tm_wg_wrapper::ctx::sfx::SfxCtx, 
+        sfx: &tm_wg_wrapper::ctx::sfx::SfxCtx, 
     ) -> Result<Self, Box<dyn std::error::Error>> {
+        if let Some(mon) = window.primary_monitor() {
+            window.set_outer_position({
+                let size = mon.size();
+                winit::dpi::PhysicalPosition::new(size.width / 2, size.height / 2)
+            });
+        }
+
         let renderer = renderer::FSRenderer::new(gfx)?;
-        let element = elem::FSElement::new();
-        let cycle = cycle_measure::CycleMeasure::new();
-        let visible_field = simple2d::types::VisibleField::new(
-            &renderer.camera.camera
+        let vfield = simple2d::types::VisibleField::new(
+            &renderer.camera.camera, 
         );
-        let mouse_unlock = util::Latch::default();
+        let cycle = cycle_measure::CycleMeasure::new();
 
         Ok(Self {
             renderer,
-            element,
+            unlock_mouse: control::Latch::default(), 
+            vfield, 
             cycle, 
-            visible_field, 
-            mouse_unlock, 
         })
     }
 
@@ -66,11 +63,7 @@ impl Frame for FerrisShooting {
         keycode: VirtualKeyCode, 
         state: ElementState, 
     ) {
-        self.element.input_key(keycode, state);
-        match keycode {
-            VirtualKeyCode::Escape => self.mouse_unlock.trigger(state), 
-            _ => {}, 
-        }
+        todo!()
     }
 
     fn input_mouse_button(
@@ -78,31 +71,28 @@ impl Frame for FerrisShooting {
         button: MouseButton, 
         state: ElementState, 
     ) {
-        self.element.input_mouse_button(button, state);
+        todo!()
     }
 
     fn input_mouse_motion(
         &mut self, 
         delta: (f64, f64), 
     ) {
-        let motion = nalgebra::Vector2::new(
-            delta.0 as f32, 
-            -delta.1 as f32
-        );
-        self.element.input_mouse_motion(motion, &self.visible_field);
+        todo!()
     }
 
     fn input_mouse_scroll(
         &mut self, 
-        _delta: MouseScrollDelta, 
+        delta: MouseScrollDelta, 
     ) {
+        todo!()
     }
 
     fn window_resizing(
         &mut self, 
         size: winit::dpi::PhysicalSize<u32>, 
     ) {
-        self.renderer.resize(size);
+        self.renderer.resize(size)
     }
 
     fn rendering<'r>(
@@ -119,32 +109,21 @@ impl Frame for FerrisShooting {
         _gfx: &tm_wg_wrapper::ctx::gfx::GfxCtx, 
         _sfx: &tm_wg_wrapper::ctx::sfx::SfxCtx, 
     ) -> Result<(), Box<dyn std::error::Error>> {
-        self.mouse_unlock.update();
-        if self.mouse_unlock.latch_off_count() == 1 {
+        self.unlock_mouse.update();
+        if self.unlock_mouse.latch_off_count() == 1 {
             window.set_cursor_visible(false);
             window.set_cursor_grab(winit::window::CursorGrabMode::Confined)?;
-        } else if self.mouse_unlock.latch_on_count() == 1 {
-            window.set_cursor_visible(true);
-            window.set_cursor_grab(winit::window::CursorGrabMode::None)?;
-        }
-        self.visible_field = simple2d::types::VisibleField::new(&self.renderer.camera.camera);
+        } else if self.unlock_mouse.latch_on_count() == 1 {
+            window.set_cursor_visible(false);
+            window.set_cursor_grab(winit::window::CursorGrabMode::Confined)?;
+        };
+        self.vfield = simple2d::types::VisibleField::new(&self.renderer.camera.camera);
         self.cycle.update();
-        self.element.update(
-            window, 
-            &self.cycle,    
-            &self.visible_field, 
-            &mut self.renderer.ferris, 
-            &mut self.renderer.aim, 
-            &mut self.renderer.gear, 
-            &mut self.renderer.enemy, 
-        );
+
         Ok(())
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    log::fern_init()?;
-    pollster::block_on(Context::<FerrisShooting>::new(()))?.run().1?;
-
-    Ok(())
+fn main() {
+    println!("Hello, world!");
 }

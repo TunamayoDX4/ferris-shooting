@@ -1,4 +1,7 @@
-use tm_wg_wrapper::{prelude::*, util::simple2d::Simple2DRender};
+use tm_wg_wrapper::{
+    prelude::*, 
+    util::simple2d::Simple2DRender, 
+};
 use simple2d::{
     S2DCamera, 
     SquareShared, 
@@ -6,14 +9,13 @@ use simple2d::{
     img_obj, 
 };
 
-/// Ferris Shooting のレンダラ
 pub struct FSRenderer {
     pub camera: S2DCamera, 
     square: SquareShared, 
     imaged: ImagedShared, 
 
     img_obj: img_obj::ImgObjRenderShared, 
-    
+
     pub ferris: img_obj::ImgObjRender, 
     pub aim: img_obj::ImgObjRender, 
     pub gear: img_obj::ImgObjRender, 
@@ -21,7 +23,7 @@ pub struct FSRenderer {
 }
 impl FSRenderer {
     pub fn new(
-        gfx: &GfxCtx, 
+        gfx: &GfxCtx
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let camera = S2DCamera::new(
             simple2d::types::Camera {
