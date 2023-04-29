@@ -14,6 +14,40 @@ use tm_wg_wrapper::prelude::*;
 pub mod log;
 pub mod renderer;
 
+pub mod scene {
+    use std::collections::VecDeque;
+
+    pub trait Scene where
+        Self: Send + Sync, 
+    {
+        type Pop: Send + Sync;
+        fn input_key(&mut self);
+        fn input_mouse_button(&mut self);
+        fn input_mouse_wheel(&mut self);
+        fn input_mouse_motion(&mut self);
+        fn process(&mut self);
+        fn rendering(&self);
+        fn pop(&mut self) -> Self::Pop;
+    }
+
+    pub enum SceneCtrl<S: Scene> {
+        Nop, 
+        PopStack, 
+        PushStack{
+            push: S, 
+        }, 
+        PopAllStack{
+            repush: Option<S>, 
+        }
+    }
+
+    pub struct SceneMgr<S: Scene> {
+        scenes: VecDeque<S>, 
+    }
+}
+
+pub mod game;
+
 pub struct FerrisShooting {
     renderer: renderer::FSRenderer, 
     unlock_mouse: control::Latch, 
@@ -32,10 +66,10 @@ impl Frame for FerrisShooting {
     }
 
     fn new(
-        initializer: Self::Initializer, 
+        _initializer: Self::Initializer, 
         window: &winit::window::Window, 
         gfx: &tm_wg_wrapper::ctx::gfx::GfxCtx, 
-        sfx: &tm_wg_wrapper::ctx::sfx::SfxCtx, 
+        _sfx: &tm_wg_wrapper::ctx::sfx::SfxCtx, 
     ) -> Result<Self, Box<dyn std::error::Error>> {
         if let Some(mon) = window.primary_monitor() {
             window.set_outer_position({
