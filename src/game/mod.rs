@@ -7,6 +7,7 @@ use tm_wg_wrapper::{
         }, 
         InstanceGen, 
         img_obj::ImgObjInstance, 
+        physic, 
     }, 
 };
 pub mod ferris;
