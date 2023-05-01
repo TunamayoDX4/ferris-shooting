@@ -13,83 +13,39 @@ use tm_wg_wrapper::prelude::*;
 
 pub mod log;
 pub mod renderer;
-
-pub mod scene {
-    use std::collections::VecDeque;
-
-    pub trait Scene where
-        Self: Send + Sync, 
-    {
-        type Pop: Send + Sync;
-        fn input_key(&mut self);
-        fn input_mouse_button(&mut self);
-        fn input_mouse_wheel(&mut self);
-        fn input_mouse_motion(&mut self);
-        fn process(&mut self);
-        fn rendering(&self);
-        fn pop(&mut self) -> Self::Pop;
-    }
-
-    pub enum SceneCtrl<S: Scene> {
-        Nop, 
-        PopStack, 
-        PushStack{
-            push: S, 
-        }, 
-        PopAllStack{
-            repush: Option<S>, 
-        }
-    }
-
-    pub struct SceneMgr<S: Scene> {
-        scenes: VecDeque<S>, 
-    }
-}
-
 pub mod game;
 
-pub struct FerrisShooting {
-    renderer: renderer::FSRenderer, 
-    unlock_mouse: control::Latch, 
-    vfield: simple2d::types::VisibleField, 
-    cycle: cycle_measure::CycleMeasure, 
+pub struct FSFrameParam {
+    cycle_measure: cycle_measure::CycleMeasure, 
 }
-impl Frame for FerrisShooting {
-    type Initializer = ();
+
+pub enum FSPopV {
+}
+
+pub enum FSFrame {
+    Game(game::Game), 
+}
+impl scene_frame::Scene for FSFrame {
+    type Rdr = renderer::FSRenderer;
+    type Fpr = FSFrameParam;
+    type PopV = FSPopV;
 
     fn window_builder() -> winit::window::WindowBuilder {
-        winit::window::WindowBuilder::new()
-            .with_title("Ferris shooting")
-            .with_resizable(false)
-            .with_active(true)
-            .with_inner_size(winit::dpi::PhysicalSize::new(1280, 720))
+        todo!()
     }
 
-    fn new(
-        _initializer: Self::Initializer, 
-        window: &winit::window::Window, 
-        gfx: &tm_wg_wrapper::ctx::gfx::GfxCtx, 
-        _sfx: &tm_wg_wrapper::ctx::sfx::SfxCtx, 
-    ) -> Result<Self, Box<dyn std::error::Error>> {
-        if let Some(mon) = window.primary_monitor() {
-            window.set_outer_position({
-                let size = mon.size();
-                winit::dpi::PhysicalPosition::new(size.width / 2, size.height / 2)
-            });
-        }
+    fn init_proc(
+        window: &Window, 
+        gfx: &GfxCtx, 
+        sfx: &SfxCtx, 
+    ) -> Result<Self::Fpr, Box<dyn std::error::Error>> {
+        todo!()
+    }
 
-        let renderer = renderer::FSRenderer::new(gfx)?;
-        let vfield = simple2d::types::VisibleField::new(
-            &renderer.camera.camera, 
-        );
-        let cycle = cycle_measure::CycleMeasure::new();
-
-        Ok(Self {
-            renderer,
-            unlock_mouse: control::Latch::default(), 
-            vfield, 
-            cycle, 
-        })
+    fn render_init(
+        gfx: &GfxCtx, 
+    ) -> Result<Self::Rdr, Box<dyn std::error::Error>> {
+        todo!()
     }
 
     fn input_key(
@@ -126,38 +82,63 @@ impl Frame for FerrisShooting {
         &mut self, 
         size: winit::dpi::PhysicalSize<u32>, 
     ) {
-        self.renderer.resize(size)
+        todo!()
     }
 
-    fn rendering<'r>(
-        &mut self, 
-        render_chain: tm_wg_wrapper::ctx::gfx::RenderingChain<'r>, 
-    ) -> tm_wg_wrapper::ctx::gfx::RenderingChain<'r> {
-        render_chain.rendering(&mut self.renderer)
+    fn require_process(
+        &self, 
+        depth: usize, 
+        is_top: bool, 
+    ) -> bool {
+        todo!()
     }
 
-    fn update(
+    fn process(
         &mut self, 
-        window: &winit::window::Window, 
-        _ctrl: &mut winit::event_loop::ControlFlow, 
-        _gfx: &tm_wg_wrapper::ctx::gfx::GfxCtx, 
-        _sfx: &tm_wg_wrapper::ctx::sfx::SfxCtx, 
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        self.unlock_mouse.update();
-        if self.unlock_mouse.latch_off_count() == 1 {
-            window.set_cursor_visible(false);
-            window.set_cursor_grab(winit::window::CursorGrabMode::Confined)?;
-        } else if self.unlock_mouse.latch_on_count() == 1 {
-            window.set_cursor_visible(false);
-            window.set_cursor_grab(winit::window::CursorGrabMode::Confined)?;
-        };
-        self.vfield = simple2d::types::VisibleField::new(&self.renderer.camera.camera);
-        self.cycle.update();
+        depth: usize, 
+        is_top: bool, 
+        frame_param: &mut Self::Fpr, 
+        window: &Window, 
+        gfx: &GfxCtx, 
+        sfx: &SfxCtx, 
+    ) -> Result<
+        scene_frame::SceneProcOp<Self>, 
+        Box<dyn std::error::Error>
+    > {
+        todo!()
+    }
 
-        Ok(())
+    fn require_rendering(
+        &self, 
+        depth: usize, 
+        is_top: bool, 
+    ) -> bool {
+        todo!()
+    }
+
+    fn rendering(
+        &self, 
+        depth: usize, 
+        is_top: bool, 
+        render: &mut Self::Rdr, 
+    ) {
+        todo!()
+    }
+
+    fn pop(self) -> Self::PopV {
+        todo!()
+    }
+
+    fn return_foreground(&mut self, popv: Self::PopV) {
+        todo!()
     }
 }
 
-fn main() {
-    println!("Hello, world!");
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /*pollster::block_on(Context::<_, scene::SceneFrame<FSScene>>::new(
+        |fpr, rdr| {
+            [FSScene::Title(false)].into_iter()
+        }
+    ))?.run().1?;*/
+    Ok(())
 }

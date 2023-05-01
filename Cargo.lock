@@ -643,8 +643,10 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "fern",
+ "hashbrown 0.13.2",
  "log",
  "once_cell",
+ "parking_lot",
  "pollster",
  "rand",
  "rand_distr",
@@ -1101,9 +1103,9 @@ dependencies = [
 
 [[package]]
 name = "matrixmultiply"
-version = "0.3.4"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "432b44fed6d9ed750739e7b719f0325555e6209d15e5ec3fd9e8a0a5509fdaf8"
+checksum = "fcce854c9e76cfd191182c280eb5460cb8efd2cb4e58a1fd56bc41102d7e5802"
 dependencies = [
  "autocfg",
  "rawpointer",
@@ -2077,7 +2079,7 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 [[package]]
 name = "tm-wg-wrapper"
 version = "0.1.0"
-source = "git+https://github.com/TunamayoDX4/tm-wg-wrapper#d81ec0312d52d1e1dca28098a0dd373a2bb51404"
+source = "git+https://github.com/TunamayoDX4/tm-wg-wrapper#e70a79ee2517a362e2ac8252fba19a040f62c146"
 dependencies = [
  "bytemuck",
  "hashbrown 0.13.2",
