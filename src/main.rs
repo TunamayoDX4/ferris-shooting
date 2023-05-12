@@ -17,9 +17,24 @@ pub mod game;
 
 pub struct FSFrameParam {
     cycle_measure: cycle_measure::CycleMeasure, 
+    visible_area: Option<simple2d::types::VisibleField>, 
+}
+impl scene_frame::FrameParam for FSFrameParam {
+    type Rdr = crate::renderer::FSRenderer;
+
+    fn update(
+        &mut self, 
+        renderer: &Self::Rdr, 
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.cycle_measure.update();
+        self.visible_area = Some(simple2d::types::VisibleField::new(
+            &renderer.camera.camera
+        ));
+        Ok(())
+    }
 }
 
-pub enum FSPopV {
+pub struct FSPopV {
 }
 
 pub enum FSFrame {
@@ -31,7 +46,11 @@ impl scene_frame::Scene for FSFrame {
     type PopV = FSPopV;
 
     fn window_builder() -> winit::window::WindowBuilder {
-        todo!()
+        winit::window::WindowBuilder::new()
+            .with_active(true)
+            .with_resizable(false)
+            .with_inner_size(winit::dpi::PhysicalSize::new(640, 960))
+            .with_title("Ferris shooting")
     }
 
     fn init_proc(
@@ -39,64 +58,58 @@ impl scene_frame::Scene for FSFrame {
         gfx: &GfxCtx, 
         sfx: &SfxCtx, 
     ) -> Result<Self::Fpr, Box<dyn std::error::Error>> {
-        todo!()
+        Ok(FSFrameParam {
+            cycle_measure: cycle_measure::CycleMeasure::new(),
+            visible_area: None,
+        })
     }
 
     fn render_init(
         gfx: &GfxCtx, 
     ) -> Result<Self::Rdr, Box<dyn std::error::Error>> {
-        todo!()
+        renderer::FSRenderer::new(gfx)
     }
 
     fn input_key(
         &mut self, 
         keycode: VirtualKeyCode, 
         state: ElementState, 
-    ) {
-        todo!()
-    }
+    ) { match self {
+        Self::Game(g) => g.input_key(keycode, state), 
+    }}
 
     fn input_mouse_button(
         &mut self, 
         button: MouseButton, 
         state: ElementState, 
-    ) {
-        todo!()
-    }
+    ) { match self {
+        FSFrame::Game(g) => g.input_mouse_button(button, state),
+    }}
 
     fn input_mouse_motion(
         &mut self, 
         delta: (f64, f64), 
-    ) {
-        todo!()
-    }
+    ) { match self {
+        FSFrame::Game(g) => g.input_mouse_motion([delta.0 as f32, -delta.1 as f32]),
+    }}
 
     fn input_mouse_scroll(
         &mut self, 
         delta: MouseScrollDelta, 
     ) {
-        todo!()
     }
 
     fn window_resizing(
         &mut self, 
         size: winit::dpi::PhysicalSize<u32>, 
     ) {
-        todo!()
-    }
-
-    fn require_process(
-        &self, 
-        depth: usize, 
-        is_top: bool, 
-    ) -> bool {
-        todo!()
     }
 
     fn process(
         &mut self, 
         depth: usize, 
         is_top: bool, 
+        renderer: &Self::Rdr, 
         frame_param: &mut Self::Fpr, 
         window: &Window, 
         gfx: &GfxCtx, 
@@ -104,41 +117,51 @@ impl scene_frame::Scene for FSFrame {
     ) -> Result<
         scene_frame::SceneProcOp<Self>, 
         Box<dyn std::error::Error>
-    > {
-        todo!()
-    }
+    > { match self {
+        FSFrame::Game(g) => {
+            frame_param.visible_area = Some(frame_param.visible_area.take().unwrap_or(
+                simple2d::types::VisibleField::new(&renderer.camera.camera)
+            ));
+            g.update(
+                is_top, 
+                window, 
+                &frame_param.cycle_measure, 
+                frame_param.visible_area.as_ref().unwrap(), 
+            )
+        },
+    }}
 
     fn require_rendering(
         &self, 
         depth: usize, 
         is_top: bool, 
-    ) -> bool {
-        todo!()
-    }
+    ) -> bool { match self {
+        FSFrame::Game(_) => true,
+    }}
 
     fn rendering(
         &self, 
         depth: usize, 
         is_top: bool, 
-        render: &mut Self::Rdr, 
-    ) {
-        todo!()
-    }
+        renderer: &mut Self::Rdr, 
+        frame_param: &Self::Fpr, 
+    ) { match self {
+        FSFrame::Game(g) => g.rendering(renderer),
+    }}
 
     fn pop(self) -> Self::PopV {
-        todo!()
+        FSPopV {}
     }
 
     fn return_foreground(&mut self, popv: Self::PopV) {
-        todo!()
     }
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /*pollster::block_on(Context::<_, scene::SceneFrame<FSScene>>::new(
+    pollster::block_on(Context::<_, scene_frame::SceneFrame<FSFrame>>::new(
         |fpr, rdr| {
-            [FSScene::Title(false)].into_iter()
+            [FSFrame::Game(game::Game::new())].into_iter()
         }
-    ))?.run().1?;*/
+    ))?.run().1?;
     Ok(())
 }

@@ -1,39 +1,60 @@
 use super::*;
 
-pub struct Ferris {
-    position: nalgebra::Point2<f32>, 
-    rotation: f32, 
-    velocity: nalgebra::Vector2<f32>, 
+pub mod ferris;
+pub mod aim;
+pub mod gear;
+
+pub struct FerrisInstances {
+    ferris: EntityHolder<ImgObjInstance, ferris::Ferris>, 
+    aim: EntityHolder<ImgObjInstance, aim::Aim>, 
+    gear: gear::GearInstances, 
 }
-impl physic::PhysicBody for Ferris {
-    fn position(&self) -> nalgebra::Point2<f32> {
-        self.position
-    }
+impl FerrisInstances {
+    pub fn new() -> Self { Self {
+        ferris: EntityHolder::new(ferris::Ferris::new()), 
+        aim: EntityHolder::new(aim::Aim::new()), 
+        gear: gear::GearInstances::new(), 
+    }}
 
-    fn size(&self) -> nalgebra::Vector2<f32> {
-        [64., 64.].into()
-    }
-
-    fn rotation(&self) -> f32 {
-        self.rotation
-    }
-
-    fn velocity(&self) -> nalgebra::Vector2<f32> {
-        self.velocity
-    }
-}
-impl InstanceGen<ImgObjInstance> for Ferris {
-    fn generate(
-        &self, 
-        instances: &mut simple2d::instance::buffer::InstanceArray<ImgObjInstance>
+    pub fn update(
+        &mut self, 
+        cycle: &cycle_measure::CycleMeasure, 
+        varea: &simple2d::types::VisibleField, 
     ) {
-        instances.push(ImgObjInstance { 
-            position: self.position.into(), 
-            size: [64., 64.], 
-            rotation: self.rotation, 
-            tex_coord: [0., 0.], 
-            tex_size: [64., 64.], 
-            tex_rev: [false, false], 
-        })
+        self.ferris.manip_mut(|f| f.update(cycle, &mut self.gear));
+        self.gear.update(cycle, varea);
+        self.aim.manip_mut(|a| a.update(varea));
+    }
+
+    pub fn rendering(
+        &self, 
+        renderer: &mut crate::renderer::FSRenderer, 
+    ) {
+        renderer.ferris.push_instance(&self.ferris);
+        renderer.gear.push_instance(&self.gear.gears); 
+        renderer.aim.push_instance(&self.aim);
+    }
+
+    pub fn input_key(&mut self, keycode: VirtualKeyCode, state: ElementState) {
+        self.ferris.manip_mut(|f| f.control.input_key(
+            keycode, 
+            state
+        ));
+    }
+
+    pub fn input_mouse_button(&mut self, button: MouseButton, state: ElementState) {
+        self.ferris.manip_mut(|f| f.control.input_mouse_button(
+            button, 
+            state
+        ));
+    }
+
+    pub fn input_mouse_motion(&mut self, motion: nalgebra::Vector2<f32>) {
+        self.ferris.manip_mut(|f| 
+            f.control.input_mouse_motion(motion)
+        );
+        self.aim.manip_mut(|a| 
+            a.input_mouse_motion(motion)
+        );
     }
 }
