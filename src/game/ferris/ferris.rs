@@ -5,7 +5,7 @@ pub struct Ferris {
     position: nalgebra::Point2<f32>, 
     rotation: f32, 
     velocity: nalgebra::Vector2<f32>, 
-    gg: gear::GearGun, 
+    pub gg: gear::GearGun, 
 }
 impl physic::PhysicBody for Ferris {
     fn position(&self) -> nalgebra::Point2<f32> {
@@ -51,7 +51,9 @@ impl Ferris {
     pub fn update(
         &mut self, 
         cycle: &cycle_measure::CycleMeasure, 
+        varea: &VisibleField, 
         gears: &mut gear::GearInstances, 
+        aim: Option<&super::aim::Aim>, 
     ) {
         self.control.update();
         let v = (match self.control.mov_fwd.get_mode() {
@@ -74,7 +76,7 @@ impl Ferris {
             _ => 0., 
         } * (std::f32::consts::PI / 180.) * cycle.dur;
 
-        if self.control.shoot_kb.is_triggered() {
+        if self.control.shoot_kb.is_triggered() || self.control.shoot_mb.is_triggered() {
             self.gg.shoot(
                 self.position, 
                 self.velocity, 
@@ -88,6 +90,42 @@ impl Ferris {
             RevMode::Backward => self.gg.shift_back(),
             _ => {}, 
         }}
+
+        if let Some(aim) = aim {
+            let angle = {
+                let distance = self.position - (aim.pbody.position + if let aim::AimState::Tracking { 
+                    vec, 
+                    .. 
+                } = aim.state { vec } else { [0., 0.].into() });
+                f32::atan2(distance.y, distance.x)
+            };
+
+            let angle_diff = (
+                (angle - (self.rotation - std::f32::consts::PI * 0.5)) + std::f32::consts::PI
+            ).rem_euclid(std::f32::consts::PI * 2.).abs() - std::f32::consts::PI;
+
+            if angle_diff < (-120. * (std::f32::consts::PI / 180.)) * cycle.dur {
+                self.rotation += -120. * (std::f32::consts::PI / 180.) * cycle.dur;
+            } else if (120. * (std::f32::consts::PI / 180.)) * cycle.dur < angle_diff {
+                self.rotation += 120. * (std::f32::consts::PI / 180.) * cycle.dur;
+            } else {
+                self.rotation = angle + std::f32::consts::PI * 0.5;
+            }
+        }
+
+        let va = varea.visible_area();
+        if self.position.x < va[0].x {
+            self.position.x = va[0].x
+        } else if va[1].x < self.position.x {
+            self.position.x = va[1].x
+        };
+
+        if self.position.y < va[0].y {
+            self.position.y = va[0].y
+        } else if va[1].y < self.position.y {
+            self.position.y = va[1].y
+        };
+
         self.gg.update(cycle);
     }
 }
@@ -102,6 +140,7 @@ pub struct Control {
     pub mouse_pointer: nalgebra::Point2<f32>, 
     /// 撃つギアの切り替え
     pub sg_ch: RevCtrl, 
+    pub auto_aim: Trigger, 
 
 }
 impl Control {
@@ -132,7 +171,7 @@ impl Control {
         state: ElementState, 
     ) { match button {
         MouseButton::Left => self.shoot_mb.trigger(state),
-        MouseButton::Right => {},
+        MouseButton::Right => self.auto_aim.trigger(state),
         MouseButton::Middle => {},
         MouseButton::Other(_) => {},
     }}
@@ -153,5 +192,6 @@ impl Control {
         self.shoot_kb.update();
         self.shoot_mb.update();
         self.sg_ch.update();
+        self.auto_aim.update();
     }
 }

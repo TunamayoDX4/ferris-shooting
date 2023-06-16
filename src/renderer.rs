@@ -1,3 +1,5 @@
+use std::io::Read;
+
 use tm_wg_wrapper::{
     prelude::*, 
     util::simple2d::Simple2DRender, 
@@ -75,7 +77,7 @@ impl FSRenderer {
             ferris,
             aim, 
             gear,
-            enemy,  
+            enemy, 
         })
     }
 

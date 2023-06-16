@@ -20,10 +20,24 @@ impl FerrisInstances {
         &mut self, 
         cycle: &cycle_measure::CycleMeasure, 
         varea: &simple2d::types::VisibleField, 
+        enemies: &mut enemy::enemy::EnemyArray, 
     ) {
-        self.ferris.manip_mut(|f| f.update(cycle, &mut self.gear));
-        self.gear.update(cycle, varea);
-        self.aim.manip_mut(|a| a.update(varea));
+        self.ferris.manip_mut(|f| f.update(
+            cycle, 
+            varea, 
+            &mut self.gear, 
+            self.aim.get()
+        ));
+        self.gear.update(cycle, varea, enemies);
+        if let Some(ferris) = self.ferris.get() {
+            self.aim.manip_mut(|a| a.update (
+                varea, 
+                ferris, 
+                enemies, 
+                ferris.control.auto_aim.get_trig_count() == 1, 
+                ferris.gg.gtype.vel_0(), 
+            ));
+        }
     }
 
     pub fn rendering(

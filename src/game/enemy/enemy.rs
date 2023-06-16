@@ -46,6 +46,14 @@ impl EnemyArray {
             _idx, entity, 
         | entity.update(cycle, varea, spawner));
     }
+
+    pub fn get(
+        &self, 
+        enemy_ref: &EnemyRef, 
+    ) -> Option<&Enemy> {
+        self.enemies.get(enemy_ref.idx)
+            .filter(|e| e.ident == enemy_ref.ident)
+    }
 }
 
 pub struct EnemyIdentMaster(u64);
@@ -124,6 +132,22 @@ impl EnemyType {
         Self::DangPtr => Some(-180.0..180.0), 
     } }
 
+    pub fn health(&self) -> f32 { match self {
+        Self::UndefBeh => 1., 
+        Self::NullPtr => 2.5, 
+        Self::DataRace => 4.5, 
+        Self::DangPtr => 12., 
+    } }
+
+    pub fn health_diffuse(
+        &self
+    ) -> Option<std::ops::Range<f32>> { match self {
+        Self::UndefBeh => Some(-0.3..0.3), 
+        Self::NullPtr => Some(-0.5..0.5), 
+        Self::DataRace => Some(-1.25..1.25), 
+        Self::DangPtr => Some(-3.0..3.0), 
+    }}
+
     pub fn spawn(
         self, 
         ident: EnemyIdent,
@@ -131,7 +155,12 @@ impl EnemyType {
         rotation: f32, 
         vel_diffuse: bool, 
     ) -> Enemy { 
-        let (render_rot, render_rot_speed, vel) = crate::RNG.with(
+        let (
+            render_rot, 
+            render_rot_speed, 
+            vel, 
+            health, 
+        ) = crate::RNG.with(
             |r| {
                 let mut rng = (**r).borrow_mut();
                 let render_rot = self.default_render_rot_range()
@@ -149,15 +178,22 @@ impl EnemyType {
                         |r| rng.gen_range(r)
                     )
                 } else { 0. };
+                let health = self.health() + self.health_diffuse()
+                    .map_or(
+                        0., 
+                        |r| rng.gen_range(r)
+                    );
                 (
                     render_rot * std::f32::consts::PI / 180., 
                     render_rot_speed * std::f32::consts::PI / 180., 
-                    vel
+                    vel, 
+                    health, 
                 )
             }
         );    
         Enemy {
             ident,
+            killed: false, 
             enemy_type: self, 
             position,
             rotation,
@@ -168,12 +204,14 @@ impl EnemyType {
                 vel * rotation.cos(), 
                 vel * rotation.sin(), 
             ),
+            health, 
         }
     }
 }
 
 pub struct Enemy {
-    ident: EnemyIdent, 
+    pub ident: EnemyIdent, 
+    pub killed: bool, 
     enemy_type: EnemyType, 
     position: nalgebra::Point2<f32>, 
     rotation: f32, 
@@ -181,6 +219,7 @@ pub struct Enemy {
     render_rot_speed: f32, 
     vel: f32, 
     velocity: nalgebra::Vector2<f32>, 
+    health: f32, 
 }
 impl Enemy {
     pub fn update(
@@ -196,6 +235,15 @@ impl Enemy {
         self.position += self.velocity * cycle.dur;
         self.render_rot += self.render_rot_speed * cycle.dur;
         varea.in_visible(self.position, self.enemy_type.size())
+        && !self.killed
+        && 0. <= self.health
+    }
+
+    pub fn give_damage(
+        &mut self, 
+        damage: f32, 
+    ) {
+        self.health -= damage;
     }
 }
 impl physic::PhysicBody for Enemy {

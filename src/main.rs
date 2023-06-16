@@ -14,6 +14,7 @@ use tm_wg_wrapper::prelude::*;
 pub mod log;
 pub mod renderer;
 pub mod game;
+pub mod game_pause;
 
 pub struct FSFrameParam {
     cycle_measure: cycle_measure::CycleMeasure, 

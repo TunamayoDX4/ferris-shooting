@@ -3,6 +3,7 @@ use super::*;
 pub mod enemy;
 pub mod spawn;
 pub mod spawn_ctrl;
+pub mod kill;
 
 pub struct EnemyIdentMaster(u64);
 impl EnemyIdentMaster {
@@ -14,7 +15,7 @@ impl EnemyIdentMaster {
 }
 
 pub struct EnemyInstances {
-    enemy: enemy::EnemyArray, 
+    pub enemy: enemy::EnemyArray, 
     spawner: spawn::EnemySpawnerArray, 
     spctrl: spawn_ctrl::SpawnerController, 
 }

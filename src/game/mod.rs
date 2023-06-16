@@ -4,7 +4,7 @@ use tm_wg_wrapper::{
         Latch, 
         RevCtrl, 
         RevMode, 
-        Trigger, 
+        Trigger, TrigTimeWrap, 
     }, 
     util::simple2d::{
         entity_holder::{
@@ -21,11 +21,13 @@ pub mod ferris;
 pub mod enemy;
 
 pub struct Game {
+    input_esc: TrigTimeWrap<Trigger>,  
     is_top_prev: bool, 
     elements: Elements, 
 }
 impl Game {
     pub fn new() -> Self { Self {
+        input_esc: TrigTimeWrap { ctrl: Trigger::default(), input_dur: 0. },  
         is_top_prev: false, 
         elements: Elements::new(),
     }}
@@ -51,7 +53,15 @@ impl Game {
             }
             self.elements.update(cycle, varea);
         }
-        Ok(scene_frame::SceneProcOp::Nop)
+        self.input_esc.update(cycle);
+
+        if 0.5 < self.input_esc.input_dur() {
+            Ok(scene_frame::SceneProcOp::StkCtl(
+                scene_frame::SceneStackCtrlOp::Exit
+            ))
+        } else {
+            Ok(scene_frame::SceneProcOp::Nop)
+        }
     }
 
     pub fn rendering(&self, renderer: &mut crate::renderer::FSRenderer) {
@@ -63,6 +73,10 @@ impl Game {
         keycode: VirtualKeyCode, 
         state: ElementState, 
     ) {
+        match keycode {
+            VirtualKeyCode::Escape => self.input_esc.ctrl.trigger(state), 
+            _ => {}, 
+        }
         self.elements.ferris.input_key(keycode, state)
     }
 
@@ -97,7 +111,7 @@ impl Elements {
         cycle: &cycle_measure::CycleMeasure, 
         varea: &simple2d::types::VisibleField, 
     ) {
-        self.ferris.update(cycle, varea);
+        self.ferris.update(cycle, varea, &mut self.enemies.enemy);
         self.enemies.update(cycle, varea);
     }
 

@@ -1,4 +1,7 @@
 use rand::Rng;
+use tm_wg_wrapper::util::simple2d::{entity_holder::EntityRefMut, physic::{aabb, PhysicBody}};
+
+use crate::game::enemy::enemy::Enemy;
 
 use super::*;
 
@@ -114,6 +117,15 @@ impl GearType {
         Self::RifleCannon => 1. / 1.5, 
     } }
 
+    /// ダメージ値
+    pub fn damage(&self) -> f32 { match self {
+        GearType::MachineGun => 1.,
+        GearType::MachineCannon => 3.,
+        GearType::Gutling => 0.8,
+        GearType::ShotGun => 0.75,
+        GearType::RifleCannon => 32.,
+    } }
+
     /// ギアのスポーン
     pub fn spawn(
         &self, 
@@ -172,11 +184,29 @@ impl InstanceGen<ImgObjInstance> for Gear {
         })
     }
 }
+impl PhysicBody for Gear {
+    fn position(&self) -> nalgebra::Point2<f32> {
+        self.position
+    }
+
+    fn size(&self) -> nalgebra::Vector2<f32> {
+        self.gtype.size()
+    }
+
+    fn rotation(&self) -> f32 {
+        self.rotation
+    }
+
+    fn velocity(&self) -> nalgebra::Vector2<f32> {
+        self.velocity
+    }
+}
 impl Gear {
     pub fn update(
         &mut self, 
         cycle: &cycle_measure::CycleMeasure, 
         varea: &simple2d::types::VisibleField, 
+        enemies: &mut enemy::enemy::EnemyArray, 
     ) -> bool {
         self.velocity = nalgebra::Vector2::new(
             self.vel * self.rotation.cos(), 
@@ -185,7 +215,34 @@ impl Gear {
         self.position += self.velocity * cycle.dur;
         self.render_rot += self.render_rot_speed * cycle.dur;
 
-        varea.in_visible(self.position, self.gtype.size())
+        // 接触した敵の中から最も近い敵を選ぶ。
+        // そもそも居なかったらギアの単純な存続処理を、
+        // 居たら最も近い敵にダメージを与え、自分は死ぬ
+        if enemies.enemies.iter_mut()
+            .map(|EntityRefMut{ entity, .. }| entity)
+            .filter(|entity| aabb(*entity, self))
+            .map(|entity| {
+                let dist = entity.position() - self.position;
+                ((dist.x.powi(2) + dist.y.powi(2)).sqrt(), entity)
+            })
+            .fold(
+                None::<(f32, &mut Enemy)>, 
+                |
+                    init, 
+                    tg, 
+                | match init {
+                    None => Some(tg), 
+                    Some(e) if tg.0 < e.0 => { Some(tg) }, 
+                    a @ Some(_) => a, 
+                }
+            )
+            .map(|(_, target)| target)
+            .map_or(true, |target| { 
+                target.give_damage(self.gtype.damage()); 
+                false 
+            })
+        { varea.in_visible(self.position, self.gtype.size()) }
+        else { false }
     }
 }
 
@@ -223,8 +280,13 @@ impl GearInstances {
         &mut self, 
         cycle: &cycle_measure::CycleMeasure, 
         varea: &simple2d::types::VisibleField, 
+        enemies: &mut enemy::enemy::EnemyArray, 
     ) {
-        self.gears.retain(|_, gear| gear.update(cycle, varea));
+        self.gears.retain(|_, gear| gear.update(
+            cycle, 
+            varea, 
+            enemies, 
+        ));
     }
 
     pub fn rendering(&self, renderer: &mut crate::renderer::FSRenderer) {
@@ -252,7 +314,7 @@ impl GearInstances {
 }
 
 pub struct GearGun {
-    gtype: GearType, 
+    pub gtype: GearType, 
     cool_time: f32, 
 }
 impl GearGun {
