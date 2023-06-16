@@ -40,6 +40,7 @@ pub struct FSPopV {
 
 pub enum FSFrame {
     Game(game::Game), 
+    GamePause(game_pause::GamePause), 
 }
 impl scene_frame::Scene for FSFrame {
     type Rdr = renderer::FSRenderer;
@@ -77,6 +78,14 @@ impl scene_frame::Scene for FSFrame {
         state: ElementState, 
     ) { match self {
         Self::Game(g) => g.input_key(keycode, state), 
+        Self::GamePause(gp) => match keycode {
+            VirtualKeyCode::Escape 
+            | VirtualKeyCode::P 
+            if state == ElementState::Pressed => {
+                gp.do_exit = true;
+            }, 
+            _ => {}, 
+        }, 
     }}
 
     fn input_mouse_button(
@@ -85,6 +94,7 @@ impl scene_frame::Scene for FSFrame {
         state: ElementState, 
     ) { match self {
         FSFrame::Game(g) => g.input_mouse_button(button, state),
+        FSFrame::GamePause(_) => {}, 
     }}
 
     fn input_mouse_motion(
@@ -92,6 +102,7 @@ impl scene_frame::Scene for FSFrame {
         delta: (f64, f64), 
     ) { match self {
         FSFrame::Game(g) => g.input_mouse_motion([delta.0 as f32, -delta.1 as f32]),
+        FSFrame::GamePause(_) => {},
     }}
 
     fn input_mouse_scroll(
@@ -130,6 +141,14 @@ impl scene_frame::Scene for FSFrame {
                 frame_param.visible_area.as_ref().unwrap(), 
             )
         },
+        FSFrame::GamePause(gp) => if gp.do_exit {
+            gp.pop(window)?;
+            Ok(scene_frame::SceneProcOp::StkCtl(
+                scene_frame::SceneStackCtrlOp::Pop
+            ))
+        } else {
+            Ok(scene_frame::SceneProcOp::Nop)
+        }, 
     }}
 
     fn require_rendering(
@@ -138,6 +157,7 @@ impl scene_frame::Scene for FSFrame {
         is_top: bool, 
     ) -> bool { match self {
         FSFrame::Game(_) => true,
+        FSFrame::GamePause(_) => is_top, 
     }}
 
     fn rendering(
@@ -148,6 +168,7 @@ impl scene_frame::Scene for FSFrame {
         frame_param: &Self::Fpr, 
     ) { match self {
         FSFrame::Game(g) => g.rendering(renderer),
+        FSFrame::GamePause(gp) => gp.rendering(renderer), 
     }}
 
     fn pop(self) -> Self::PopV {

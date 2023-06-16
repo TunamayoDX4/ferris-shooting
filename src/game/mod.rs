@@ -1,10 +1,10 @@
 use tm_wg_wrapper::{
     prelude::*, 
     util::control::{
-        Latch, 
         RevCtrl, 
         RevMode, 
-        Trigger, TrigTimeWrap, 
+        Trigger, 
+        TrigTimeWrap, 
     }, 
     util::simple2d::{
         entity_holder::{
@@ -17,17 +17,21 @@ use tm_wg_wrapper::{
         types::VisibleField, 
     }, 
 };
+
+use crate::game_pause::GamePause;
 pub mod ferris;
 pub mod enemy;
 
 pub struct Game {
-    input_esc: TrigTimeWrap<Trigger>,  
+    input_esc: TrigTimeWrap<Trigger>, 
+    input_p: Trigger, 
     is_top_prev: bool, 
     elements: Elements, 
 }
 impl Game {
     pub fn new() -> Self { Self {
         input_esc: TrigTimeWrap { ctrl: Trigger::default(), input_dur: 0. },  
+        input_p: Trigger::default(), 
         is_top_prev: false, 
         elements: Elements::new(),
     }}
@@ -54,10 +58,17 @@ impl Game {
             self.elements.update(cycle, varea);
         }
         self.input_esc.update(cycle);
+        self.input_p.update();
 
         if 0.5 < self.input_esc.input_dur() {
             Ok(scene_frame::SceneProcOp::StkCtl(
                 scene_frame::SceneStackCtrlOp::Exit
+            ))
+        } else if self.input_p.get_trig_count() == 1 {
+            Ok(scene_frame::SceneProcOp::StkCtl(
+                scene_frame::SceneStackCtrlOp::Push(
+                    crate::FSFrame::GamePause(GamePause::spawn(window)?)
+                )
             ))
         } else {
             Ok(scene_frame::SceneProcOp::Nop)
@@ -75,6 +86,7 @@ impl Game {
     ) {
         match keycode {
             VirtualKeyCode::Escape => self.input_esc.ctrl.trigger(state), 
+            VirtualKeyCode::P => self.input_p.trigger(state), 
             _ => {}, 
         }
         self.elements.ferris.input_key(keycode, state)

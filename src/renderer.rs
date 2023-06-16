@@ -22,6 +22,7 @@ pub struct FSRenderer {
     pub aim: img_obj::ImgObjRender, 
     pub gear: img_obj::ImgObjRender, 
     pub enemy: img_obj::ImgObjRender, 
+    pub indicator: img_obj::ImgObjRender, 
 }
 impl FSRenderer {
     pub fn new(
@@ -29,7 +30,7 @@ impl FSRenderer {
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let camera = S2DCamera::new(
             simple2d::types::Camera {
-                position: [0., 240.].into(),
+                position: [0., 0.].into(),
                 size: [
                     gfx.config.width as f32, 
                     gfx.config.height as f32, 
@@ -68,6 +69,11 @@ impl FSRenderer {
             &imaged, 
             "./assets/images/enemy_sprite.png"
         )?;
+        let indicator = img_obj::ImgObjRender::new(
+            gfx, 
+            &imaged, 
+            "./assets/images/indicator.png", 
+        )?;
 
         Ok(Self {
             camera,
@@ -78,6 +84,7 @@ impl FSRenderer {
             aim, 
             gear,
             enemy, 
+            indicator, 
         })
     }
 
@@ -131,6 +138,11 @@ impl Renderer for FSRenderer {
             &self.img_obj, 
         ));
         self.aim.rendering(gfx, &mut encoder, view, &self.camera, (
+            &self.square, 
+            &self.imaged, 
+            &self.img_obj, 
+        ));
+        self.indicator.rendering(gfx, &mut encoder, view, &self.camera, (
             &self.square, 
             &self.imaged, 
             &self.img_obj, 

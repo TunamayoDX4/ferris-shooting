@@ -42,7 +42,7 @@ impl InstanceGen<ImgObjInstance> for Ferris {
 impl Ferris {
     pub fn new() -> Self { Self {
         control: Control::default(),
-        position: [0., 0.].into(),
+        position: [0., -240.].into(),
         rotation: 0.,
         velocity: [0., 0.].into(),
         gg: gear::GearGun::new(gear::GearType::MachineGun), 
