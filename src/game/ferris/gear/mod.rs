@@ -6,6 +6,7 @@ use crate::game::enemy::enemy::Enemy;
 use super::*;
 
 pub mod gear_type;
+pub mod missile;
 
 pub struct GearIdentMaster(u64);
 impl GearIdentMaster {

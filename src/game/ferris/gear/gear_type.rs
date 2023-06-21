@@ -1,25 +1,47 @@
+use crate::RNG;
+
 use super::*;
 
 #[derive(Clone)]
 pub enum GearType {
     GunGear(GunGear), 
-    MissileGear(MissileGear), 
+    MissileGear(missile::MissileGear), 
 }
 
+pub trait TrGearType<Sc, ScR> {
+    fn name(&self) -> &str;
+    fn shift(&mut self, shift_con: Sc) -> ScR;
+    fn size(&self) -> nalgebra::Vector2<f32>;
+    fn vel_const(&self) -> f32;
+    fn vel_diff(&self) -> Option<std::ops::Range<f32>>;
+    fn vel_0(&self) -> f32 {
+        self.vel_const() + self.vel_diff()
+            .map(|fr| RNG.with(
+                |r| r.borrow_mut().gen_range(fr)
+            ))
+            .unwrap_or(0.)
+    }
+    fn angle_diff(&self) -> Option<std::ops::Range<f32>>;
+    fn angle_0(&self, set_angle: f32) -> f32 {
+        set_angle + self.angle_diff()
+            .map(|fr| RNG.with(
+                |r| r.borrow_mut().gen_range(fr)
+            ))
+            .unwrap_or(0.)
+    }
+}
+
+/// 発射する弾丸を選択するためのセレクタ
 #[derive(Clone)]
-pub enum MissileGear {
-    LightMissile, 
-    HeavyMissile, 
-    SwarmMissile, 
-}
-impl MissileGear {
-    pub fn name(&self) -> &str { match self {
-        Self::LightMissile => "機動ミサイル", 
-        Self::HeavyMissile => "高威力弾頭ミサイル", 
-        Self::SwarmMissile => "スウォームミサイル", 
-    } }
+pub enum GunGearSelector {
+    MachineGun, 
+    MachineCannon, 
+    Gutling, 
+    ShotGun, 
+    RifleCannon, 
 }
 
+/// 発射された弾丸のインスタンス
 #[derive(Clone)]
 pub enum GunGear {
     MachineGun, 

@@ -3,7 +3,6 @@ use super::*;
 pub mod enemy;
 pub mod spawn;
 pub mod spawn_ctrl;
-pub mod kill;
 
 pub struct EnemyIdentMaster(u64);
 impl EnemyIdentMaster {

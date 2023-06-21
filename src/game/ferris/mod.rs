@@ -2,18 +2,21 @@ use super::*;
 
 pub mod ferris;
 pub mod aim;
-pub mod gear;
+//pub mod gear;
+pub mod phys;
+pub mod ngear;
+use ngear::gtype::GTypeTrait;
 
 pub struct FerrisInstances {
     ferris: EntityHolder<ImgObjInstance, ferris::Ferris>, 
     aim: EntityHolder<ImgObjInstance, aim::Aim>, 
-    gear: gear::GearInstances, 
+    gear2: ngear::array::GearInstances, 
 }
 impl FerrisInstances {
     pub fn new() -> Self { Self {
         ferris: EntityHolder::new(ferris::Ferris::new()), 
         aim: EntityHolder::new(aim::Aim::new()), 
-        gear: gear::GearInstances::new(), 
+        gear2: ngear::array::GearInstances::new(), 
     }}
 
     pub fn update(
@@ -25,17 +28,23 @@ impl FerrisInstances {
         self.ferris.manip_mut(|f| f.update(
             cycle, 
             varea, 
-            &mut self.gear, 
+            &mut self.gear2, 
             self.aim.get()
         ));
-        self.gear.update(cycle, varea, enemies);
+        self.gear2.update(
+            cycle, 
+            varea, 
+            self.ferris.get().map(|f| &f.body), 
+            &self.aim, 
+            enemies
+        );
         if let Some(ferris) = self.ferris.get() {
             self.aim.manip_mut(|a| a.update (
                 varea, 
                 ferris, 
                 enemies, 
                 ferris.control.auto_aim.get_trig_count() == 1, 
-                ferris.gg.gtype.vel_0(), 
+                ferris.gg2.gt.shoot_shell().vel_default(), 
             ));
         }
     }
@@ -45,7 +54,7 @@ impl FerrisInstances {
         renderer: &mut crate::renderer::FSRenderer, 
     ) {
         renderer.ferris.push_instance(&self.ferris);
-        renderer.gear.push_instance(&self.gear.gears); 
+        self.gear2.rendering(renderer);
         renderer.aim.push_instance(&self.aim);
     }
 

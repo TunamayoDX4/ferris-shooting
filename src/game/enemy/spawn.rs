@@ -55,10 +55,10 @@ pub enum SpawnerType {
 impl SpawnerType {
     pub fn update(
         &mut self, 
-        cycle: &cycle_measure::CycleMeasure, 
-        varea: &simple2d::types::VisibleField, 
+        _cycle: &cycle_measure::CycleMeasure, 
+        _varea: &simple2d::types::VisibleField, 
         position: nalgebra::Point2<f32>, 
-        cycle_time: f32, 
+        _cycle_time: f32, 
         enemies: &mut EnemyArray, 
     ) -> bool { match self {
         Self::Solo(et) => {

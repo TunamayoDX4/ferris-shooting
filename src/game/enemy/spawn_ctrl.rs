@@ -28,7 +28,7 @@ impl SpawnerController {
             };
             let pos = head_pos + r.gen_range(0.0..1.0) * line;
             let chance = r.gen_range(0..100);
-            if !r.gen_bool(1. / 8.) { return None }
+            if !r.gen_bool(1. / 100.) { return None }
             let enemy = if chance < 3 {
                 EnemyType::DangPtr
             } else if chance < 10 {

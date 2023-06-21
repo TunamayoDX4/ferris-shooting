@@ -213,7 +213,7 @@ pub struct Enemy {
     pub ident: EnemyIdent, 
     pub killed: bool, 
     enemy_type: EnemyType, 
-    position: nalgebra::Point2<f32>, 
+    pub position: nalgebra::Point2<f32>, 
     rotation: f32, 
     render_rot: f32, 
     render_rot_speed: f32, 
