@@ -15,6 +15,7 @@ pub mod log;
 pub mod renderer;
 pub mod game;
 pub mod game_pause;
+pub mod game_over;
 
 pub struct FSFrameParam {
     cycle_measure: cycle_measure::CycleMeasure, 
@@ -41,6 +42,7 @@ pub struct FSPopV {
 pub enum FSFrame {
     Game(game::Game), 
     GamePause(game_pause::GamePause), 
+    GameOver(game_over::GameOver), 
 }
 impl scene_frame::Scene for FSFrame {
     type Rdr = renderer::FSRenderer;
@@ -86,6 +88,14 @@ impl scene_frame::Scene for FSFrame {
             }, 
             _ => {}, 
         }, 
+        Self::GameOver(gp) => match keycode {
+            VirtualKeyCode::Escape
+            | VirtualKeyCode::P
+            if state == ElementState::Pressed => {
+                gp.do_exit = true;
+            }, 
+            _ => {}, 
+        }, 
     }}
 
     fn input_mouse_button(
@@ -95,6 +105,7 @@ impl scene_frame::Scene for FSFrame {
     ) { match self {
         FSFrame::Game(g) => g.input_mouse_button(button, state),
         FSFrame::GamePause(_) => {}, 
+        FSFrame::GameOver(_) => {}, 
     }}
 
     fn input_mouse_motion(
@@ -103,6 +114,7 @@ impl scene_frame::Scene for FSFrame {
     ) { match self {
         FSFrame::Game(g) => g.input_mouse_motion([delta.0 as f32, -delta.1 as f32]),
         FSFrame::GamePause(_) => {},
+        FSFrame::GameOver(_) => {}, 
     }}
 
     fn input_mouse_scroll(
@@ -149,6 +161,16 @@ impl scene_frame::Scene for FSFrame {
         } else {
             Ok(scene_frame::SceneProcOp::Nop)
         }, 
+        FSFrame::GameOver(gp) => if gp.do_exit {
+            gp.pop(window)?;
+            Ok(scene_frame::SceneProcOp::StkCtl(
+                scene_frame::SceneStackCtrlOp::PopAll(
+                    FSFrame::Game(game::Game::new())
+                )
+            ))
+        } else {
+            Ok(scene_frame::SceneProcOp::Nop)
+        }, 
     }}
 
     fn require_rendering(
@@ -158,6 +180,7 @@ impl scene_frame::Scene for FSFrame {
     ) -> bool { match self {
         FSFrame::Game(_) => true,
         FSFrame::GamePause(_) => is_top, 
+        FSFrame::GameOver(_) => is_top, 
     }}
 
     fn rendering(
@@ -169,6 +192,7 @@ impl scene_frame::Scene for FSFrame {
     ) { match self {
         FSFrame::Game(g) => g.rendering(renderer),
         FSFrame::GamePause(gp) => gp.rendering(renderer), 
+        FSFrame::GameOver(gp) => gp.rendering(renderer), 
     }}
 
     fn pop(self) -> Self::PopV {

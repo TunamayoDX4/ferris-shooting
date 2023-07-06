@@ -1,9 +1,12 @@
+use std::fmt::Write;
+
 use tm_wg_wrapper::{
     prelude::*, 
     util::control::{
         RevCtrl, 
         RevMode, 
         Trigger, 
+        Latch, 
         TrigTimeWrap, 
     }, 
     util::simple2d::{
@@ -18,7 +21,7 @@ use tm_wg_wrapper::{
     }, 
 };
 
-use crate::game_pause::GamePause;
+use crate::{game_pause::GamePause, game_over::GameOver};
 pub mod ferris;
 pub mod enemy;
 
@@ -27,6 +30,9 @@ pub struct Game {
     input_p: Trigger, 
     is_top_prev: bool, 
     elements: Elements, 
+    score: u64, 
+    health: u64, 
+    ui_text_buffer: Option<String>, 
 }
 impl Game {
     pub fn new() -> Self { Self {
@@ -34,6 +40,9 @@ impl Game {
         input_p: Trigger::default(), 
         is_top_prev: false, 
         elements: Elements::new(),
+        score: 0, 
+        health: 1000, 
+        ui_text_buffer: None, 
     }}
 
     pub fn update(
@@ -55,14 +64,40 @@ impl Game {
                 )?;
                 window.set_cursor_visible(false);
             }
-            self.elements.update(cycle, varea);
+            self.elements.update(
+                cycle, 
+                varea, 
+                &mut self.score, 
+                &mut self.health, 
+            );
         }
         self.input_esc.update(cycle);
         self.input_p.update();
 
+        if let Some(stb) = self.ui_text_buffer.as_mut() {
+            stb.clear();
+            stb.write_fmt(format_args!(
+                "Score: {score}\nHealth: {health}", 
+                score = self.score, 
+                health = self.health, 
+            ))?
+        } else {
+            self.ui_text_buffer = Some(format!(
+                "Score: {score}\nHealth: {health}", 
+                score = self.score, 
+                health = self.health, 
+            ))
+        }
+
         if 0.5 < self.input_esc.input_dur() {
             Ok(scene_frame::SceneProcOp::StkCtl(
                 scene_frame::SceneStackCtrlOp::Exit
+            ))
+        } else if self.health == 0 {
+            Ok(scene_frame::SceneProcOp::StkCtl(
+                scene_frame::SceneStackCtrlOp::Push(
+                    crate::FSFrame::GameOver(GameOver::spawn(window)?)
+                )
             ))
         } else if self.input_p.get_trig_count() == 1 {
             Ok(scene_frame::SceneProcOp::StkCtl(
@@ -76,6 +111,20 @@ impl Game {
     }
 
     pub fn rendering(&self, renderer: &mut crate::renderer::FSRenderer) {
+        renderer.font.draw_type(&simple2d::font_typing::TypeParam {
+            s: self.ui_text_buffer.as_ref()
+                .map(|s| s.as_str())
+                .unwrap_or("Score: null\nHealth: null"),
+            position: {
+                let size = renderer.camera.camera.size;
+                (size / 2.).into()
+            },
+            rotation: 0.,
+            size_ratio: [1., 1.],
+            align_v: simple2d::font_typing::TypeAlignV::Top,
+            align_h: simple2d::font_typing::TypeAlignH::Right,
+            direction: simple2d::font_typing::TypeDirection::Horizontal,
+        });
         self.elements.rendering(renderer)
     }
 
@@ -122,9 +171,11 @@ impl Elements {
         &mut self, 
         cycle: &cycle_measure::CycleMeasure, 
         varea: &simple2d::types::VisibleField, 
+        score: &mut u64, 
+        health: &mut u64, 
     ) {
         self.ferris.update(cycle, varea, &mut self.enemies.enemy);
-        self.enemies.update(cycle, varea);
+        self.enemies.update(cycle, varea, score, health);
     }
 
     pub fn rendering(&self, renderer: &mut crate::renderer::FSRenderer) {

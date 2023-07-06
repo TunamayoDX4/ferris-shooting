@@ -42,7 +42,7 @@ impl MissileLauncher {
             _ => None, 
         }).flatten();
         let lm = MissileGearType::LightMissile(
-            LightMissile { target }
+            LightMissile { fcs_controlled: target.is_some(), target }
         );
         let gb = crate::RNG.with(|r| {
             let mut rng = r.borrow_mut();
@@ -128,7 +128,7 @@ impl super::super::GTypeTrait for MissileGearType {
     }
 
     fn vel_default(&self) -> f32 {
-        720.
+        120.
     }
 
     fn vel_diff(&self) -> Option<std::ops::Range<f32>> {
@@ -180,6 +180,24 @@ impl super::super::GTypeTrait for MissileGearType {
                     }
                 );
 
+                // 速度の更新
+                let (vup, vmax) = {
+                    let (vup, vmax) = match self {
+                        MissileGearType::LightMissile(lm) => lm.speed_boost_max(),
+                    };
+                    (vup * cycle.dur, vmax)
+                };
+                
+                // 加速
+                if phys.vel_a < vmax {
+                    let tmp = phys.vel_a + vup;
+                    if tmp < vmax {
+                        phys.vel_a = tmp
+                    } else {
+                        phys.vel_a = vmax
+                    }
+                }
+
                 let eref = enemies.enemies.iter_mut()
                     .map(|EntityRefMut { entity, .. }| entity)
                     .filter(|entity| aabb(*entity, &super::super::GPhysWrap {
@@ -221,6 +239,7 @@ impl super::super::GTypeTrait for MissileGearType {
 #[derive(Clone)]
 pub struct LightMissile {
     target: Option<enemy::enemy::EnemyRef>, 
+    fcs_controlled: bool, 
 }
 impl MissileTrait for LightMissile {
     fn mode(&self) -> MissileHomingMode {
@@ -236,7 +255,11 @@ impl MissileTrait for LightMissile {
     }
 
     fn rotation_speed(&self) -> f32 {
-        360.
+        120.
+    }
+
+    fn speed_boost_max(&self) -> (f32, f32) {
+        (620., 1280.)
     }
 
     fn seek_target(
@@ -258,7 +281,7 @@ impl MissileTrait for LightMissile {
             // 相対距離の計算
             let dist = (dist.x.powi(2) + dist.y.powi(2)).sqrt();
 
-            dist.abs() < 400. && angle_diff.abs() < std::f32::consts::PI * 0.167
+            dist.abs() < 800. && angle_diff.abs() < std::f32::consts::PI * 0.167
         };
         match &mut self.target {
             e @ None => *e = choice::choice_simple_neerest(
@@ -266,7 +289,9 @@ impl MissileTrait for LightMissile {
                 enemies, 
                 fnc, 
             ), 
-            e @ Some(_) => if let Some(tgt) = enemies.get(
+            e @ Some(_) if !self.fcs_controlled => if let Some(
+                tgt
+            ) = enemies.get(
                 e.as_ref().unwrap()
             ) {
                 let dist = tgt.position - phys.phys.position;
@@ -279,6 +304,7 @@ impl MissileTrait for LightMissile {
                     *e = None
                 }
             }
+            _ => {}, 
         }
     }
 }
@@ -289,6 +315,7 @@ pub trait MissileTrait {
     fn target(&self) -> Option<&enemy::enemy::EnemyRef>;
     fn target_mut(&mut self) -> &mut Option<enemy::enemy::EnemyRef>;
     fn rotation_speed(&self) -> f32;
+    fn speed_boost_max(&self) -> (f32, f32);
 
     fn seek_target(
         &mut self, 
@@ -334,7 +361,6 @@ pub trait MissileTrait {
                 (angle - phys.phys.rotation) + std::f32::consts::PI
             ).rem_euclid(std::f32::consts::PI * 2.).abs()
                 - std::f32::consts::PI;
-            println!("{ad}", ad = angle_diff * (180. / std::f32::consts::PI));
             
             // 回転速度
             let rs = self.rotation_speed() 
@@ -348,8 +374,6 @@ pub trait MissileTrait {
             } else {
                 phys.phys.rotation = angle
             }
-        } else {
-            println!("unhoming");
         }
     }
 }

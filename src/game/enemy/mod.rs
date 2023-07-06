@@ -29,6 +29,8 @@ impl EnemyInstances {
         &mut self, 
         cycle: &cycle_measure::CycleMeasure, 
         varea: &simple2d::types::VisibleField, 
+        score: &mut u64, 
+        health: &mut u64, 
     ) {
         self.spctrl.update(
             cycle, 
@@ -40,7 +42,13 @@ impl EnemyInstances {
             varea, 
             &mut self.enemy
         );
-        self.enemy.update(cycle, varea, &mut self.spawner);
+        self.enemy.update(
+            cycle, 
+            varea, 
+            &mut self.spawner, 
+            score, 
+            health, 
+        );
     }
 
     pub fn push_spawner(

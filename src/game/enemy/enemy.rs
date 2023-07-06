@@ -41,10 +41,12 @@ impl EnemyArray {
         cycle: &cycle_measure::CycleMeasure, 
         varea: &simple2d::types::VisibleField, 
         spawner: &mut super::spawn::EnemySpawnerArray, 
+        score: &mut u64, 
+        damage: &mut u64, 
     ) {
         self.enemies.retain(|
             _idx, entity, 
-        | entity.update(cycle, varea, spawner));
+        | entity.update(cycle, varea, spawner, score, damage));
     }
 
     pub fn get(
@@ -148,6 +150,24 @@ impl EnemyType {
         Self::DangPtr => Some(-3.0..3.0), 
     }}
 
+    pub fn score(
+        &self, 
+    ) -> u64 { match self {
+        EnemyType::UndefBeh => 100,
+        EnemyType::NullPtr => 500,
+        EnemyType::DataRace => 350,
+        EnemyType::DangPtr => 1200,
+    }}
+
+    pub fn damage(
+        &self, 
+    ) -> u64 { match self {
+        EnemyType::UndefBeh => 50,
+        EnemyType::NullPtr => 25,
+        EnemyType::DataRace => 100,
+        EnemyType::DangPtr => 200,
+    }}
+
     pub fn spawn(
         self, 
         ident: EnemyIdent,
@@ -226,7 +246,9 @@ impl Enemy {
         &mut self, 
         cycle: &cycle_measure::CycleMeasure, 
         varea: &simple2d::types::VisibleField, 
-        spawner: &mut super::spawn::EnemySpawnerArray, 
+        _spawner: &mut super::spawn::EnemySpawnerArray, 
+        score: &mut u64, 
+        health: &mut u64, 
     ) -> bool {
         self.velocity = [
             self.vel * self.rotation.cos(), 
@@ -234,9 +256,19 @@ impl Enemy {
         ].into();
         self.position += self.velocity * cycle.dur;
         self.render_rot += self.render_rot_speed * cycle.dur;
-        varea.in_visible(self.position, self.enemy_type.size())
+        if self.health <= 0. { self.killed = true }
+        if self.killed { *score += self.enemy_type.score() }
+        let varea = varea.visible_area();
+        let out_of_under = self.position.y < varea[0].y;
+        let out_of_varea = self.position.x < varea[0].x
+            && varea[1].x < self.position.x
+            && varea[1].y < self.position.y;
+        if out_of_under { *health = health.checked_sub(
+            self.enemy_type.damage()
+        ).unwrap_or(0) }
+        !out_of_under
+        && !out_of_varea
         && !self.killed
-        && 0. <= self.health
     }
 
     pub fn give_damage(

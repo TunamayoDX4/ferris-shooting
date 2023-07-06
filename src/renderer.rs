@@ -9,6 +9,7 @@ use simple2d::{
     SquareShared, 
     ImagedShared, 
     img_obj, 
+    font_typing, 
 };
 
 pub struct FSRenderer {
@@ -22,6 +23,7 @@ pub struct FSRenderer {
     pub aim: img_obj::ImgObjRender, 
     pub gear: img_obj::ImgObjRender, 
     pub enemy: img_obj::ImgObjRender, 
+    pub font: font_typing::FontTypeRender, 
     pub indicator: img_obj::ImgObjRender, 
 }
 impl FSRenderer {
@@ -69,6 +71,74 @@ impl FSRenderer {
             &imaged, 
             "./assets/images/enemy_sprite.png"
         )?;
+        let font = img_obj::ImgObjRender::new(
+            gfx, 
+            &imaged, 
+            "./assets/images/font.png", 
+        )?;
+        let font_set = font_typing::FontSet {
+            fonts: [
+                ' ', '!', '"', '#', 
+                '$', '%', '&', '\'', 
+                '(', ')', '*', '+', 
+                ',', '-', '.', '/', 
+                '0', '1', '2', '3', 
+                '4', '5', '6', '7', 
+                '8', '9', ':', ';', 
+                '<', '=', '>', '?', 
+                '@', 'A', 'B', 'C', 
+                'D', 'E', 'F', 'G', 
+                'H', 'I', 'J', 'K', 
+                'L', 'M', 'N', 'O', 
+                'P', 'Q', 'R', 'S', 
+                'T', 'U', 'V', 'W', 
+                'X', 'Y', 'Z', '[', 
+                '\\', ']', '^', '_', 
+                '`', 'a', 'b', 'c', 
+                'd', 'e', 'f', 'g', 
+                'h', 'i', 'j', 'k', 
+                'l', 'm', 'n', 'o', 
+                'p', 'q', 'r', 's', 
+                't', 'u', 'v', 'w', 
+                'x', 'y', 'z', '{', 
+                '|', '}', '~', '\n', 
+                'ｱ', 'ｲ', 'ｳ', 'ｴ', 
+                'ｵ', 'ｶ', 'ｷ', 'ｸ', 
+                'ｹ', 'ｺ', 'ｻ', 'ｼ', 
+                'ｽ', 'ｾ', 'ｿ', 'ﾀ', 
+                'ﾁ', 'ﾂ', 'ﾃ', 'ﾄ', 
+                'ﾅ', 'ﾆ', 'ﾇ', 'ﾈ', 
+                'ﾉ', 'ﾊ', 'ﾋ', 'ﾌ', 
+                'ﾍ', 'ﾎ', 'ﾏ', 'ﾐ', 
+                'ﾑ', 'ﾒ', 'ﾓ', 'ﾔ', 
+                'ヰ', 'ﾕ', 'ヱ', 'ﾖ', 
+                'ﾗ', 'ﾘ', 'ﾙ', 'ﾚ', 
+                'ﾛ', 'ﾜ', 'ｦ', 'ﾝ', 
+                'ｧ', 'ｨ', 'ｩ', 'ｪ', 
+                'ｫ', 'ｬ', 'ｭ', 'ｮ', 
+                'ﾞ', 'ﾟ', '､', '｡', 
+                '･', //'', '', '', 
+            ].into_iter()
+                .enumerate()
+                .map(|(i, c)| (
+                    c, [16. * (i % 16) as f32, 32. * (i / 16) as f32]
+                ))
+                .map(|(c, s)| (c, font_typing::CharModel {
+                    tex_coord: s,
+                    tex_size: [16., 32.],
+                    base_line: [0., 0.],
+                }))
+                .collect(),
+            default: font_typing::CharModel { 
+                tex_coord: [16. * 15., 32. * 5.], 
+                tex_size: [16., 32.], 
+                base_line: [0., 0.] 
+            },
+        };
+        let font = font_typing::FontTypeRender::new(
+            font, 
+            font_set, 
+        );
         let indicator = img_obj::ImgObjRender::new(
             gfx, 
             &imaged, 
@@ -84,6 +154,7 @@ impl FSRenderer {
             aim, 
             gear,
             enemy, 
+            font, 
             indicator, 
         })
     }
@@ -138,6 +209,11 @@ impl Renderer for FSRenderer {
             &self.img_obj, 
         ));
         self.aim.rendering(gfx, &mut encoder, view, &self.camera, (
+            &self.square, 
+            &self.imaged, 
+            &self.img_obj, 
+        ));
+        self.font.rendering(gfx, &mut encoder, view, &self.camera, (
             &self.square, 
             &self.imaged, 
             &self.img_obj, 

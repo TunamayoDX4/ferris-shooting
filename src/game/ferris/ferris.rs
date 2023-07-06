@@ -50,6 +50,7 @@ pub struct Ferris {
     pub body: FerrisBody, 
     pub gg2: ngear::gtype::gun::GearGun, 
     pub ml: ngear::gtype::missile::MissileLauncher, 
+    pub rotate_speed: f32, 
 }
 impl physic::PhysicBody for Ferris {
     fn position(&self) -> nalgebra::Point2<f32> {
@@ -94,6 +95,7 @@ impl Ferris {
         }, 
         gg2: ngear::gtype::gun::GearGun::default(), 
         ml: ngear::gtype::missile::MissileLauncher::default(), 
+        rotate_speed: 360., 
     }}
 
     pub fn update(
@@ -154,7 +156,7 @@ impl Ferris {
             )
         }
 
-        if let Some(aim) = aim {
+        if let Some(aim) = aim { if self.control.auto_track.is_latch_on() {
             let angle = {
                 let distance = self.body.position - (aim.pbody.position + if let aim::AimState::Tracking { 
                     vec, 
@@ -167,14 +169,14 @@ impl Ferris {
                 (angle - (self.body.rotation - std::f32::consts::PI * 0.5)) + std::f32::consts::PI
             ).rem_euclid(std::f32::consts::PI * 2.).abs() - std::f32::consts::PI;
 
-            if angle_diff < (-120. * (std::f32::consts::PI / 180.)) * cycle.dur {
-                self.body.rotation += -120. * (std::f32::consts::PI / 180.) * cycle.dur;
-            } else if (120. * (std::f32::consts::PI / 180.)) * cycle.dur < angle_diff {
-                self.body.rotation += 120. * (std::f32::consts::PI / 180.) * cycle.dur;
+            if angle_diff < (-self.rotate_speed * (std::f32::consts::PI / 180.)) * cycle.dur {
+                self.body.rotation += -self.rotate_speed * (std::f32::consts::PI / 180.) * cycle.dur;
+            } else if (self.rotate_speed * (std::f32::consts::PI / 180.)) * cycle.dur < angle_diff {
+                self.body.rotation += self.rotate_speed * (std::f32::consts::PI / 180.) * cycle.dur;
             } else {
                 self.body.rotation = angle + std::f32::consts::PI * 0.5;
             }
-        }
+        }}
 
         self.body.update(cycle, varea);
         //self.gg.update(cycle);
@@ -195,6 +197,7 @@ pub struct Control {
     /// 撃つギアの切り替え
     pub sg_ch: RevCtrl, 
     pub auto_aim: Trigger, 
+    pub auto_track: Latch, 
 
 }
 impl Control {
@@ -210,7 +213,7 @@ impl Control {
         VirtualKeyCode::Q => self.rot_left.input(RevMode::Forward, state), 
         VirtualKeyCode::E => self.rot_left.input(RevMode::Backward, state), 
         VirtualKeyCode::Z => self.sg_ch.input(RevMode::Backward, state), 
-        VirtualKeyCode::X => {}, 
+        VirtualKeyCode::X => self.auto_track.trigger(state), 
         VirtualKeyCode::C => self.sg_ch.input(RevMode::Forward, state), 
         VirtualKeyCode::R => {}, 
         VirtualKeyCode::F => self.shoot_ms.trigger(state), 
@@ -248,5 +251,6 @@ impl Control {
         self.shoot_ms.update();
         self.sg_ch.update();
         self.auto_aim.update();
+        self.auto_track.update();
     }
 }
