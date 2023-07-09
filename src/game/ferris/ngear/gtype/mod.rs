@@ -12,12 +12,13 @@ use crate::game::enemy::enemy::EnemyArray;
 
 pub mod gun;
 pub mod missile;
+pub mod fragment;
 
 /// ギアの種類データ
 pub enum GType {
     /// ガン・ギア
     /// 砲タイプ。単純な徹甲弾や榴弾
-    GunShot(gun::GunGearType), 
+    GunShot(gun::GunGear), 
 
     /// ミサイル・ギア
     /// ミサイルタイプ。追尾性のギア
@@ -25,37 +26,37 @@ pub enum GType {
 
     /// エフェクト・ギア
     /// なんかしらのエフェクト
-    Effect, 
+    Fragment(fragment::FragmentGear), 
 }
 impl GTypeTrait for GType {
     fn angle_diff(&self) -> Option<std::ops::Range<f32>> { match self {
         GType::GunShot(gs) => gs.angle_diff(),
         GType::Missile(gm) => gm.angle_diff(),
-        GType::Effect => todo!(),
+        GType::Fragment(gf) => gf.angle_diff(),
     }}
 
     fn vel_default(&self) -> f32 { match self {
         GType::GunShot(gs) => gs.vel_default(),
         GType::Missile(gm) => gm.vel_default(),
-        GType::Effect => todo!(),
+        GType::Fragment(gf) => gf.vel_default(),
     }}
 
     fn vel_diff(&self) -> Option<std::ops::Range<f32>> { match self {
         GType::GunShot(gs) => gs.vel_diff(),
         GType::Missile(gm) => gm.vel_diff(),
-        GType::Effect => todo!(),
+        GType::Fragment(gf) => gf.vel_diff(),
     }}
 
     fn size(&self) -> nalgebra::Vector2<f32> { match self {
         GType::GunShot(gs) => gs.size(),
         GType::Missile(gm) => gm.size(),
-        GType::Effect => todo!(),
+        GType::Fragment(gf) => gf.size(),
     }}
 
     fn tex_rot_diff(&self) -> Option<std::ops::Range<f32>> { match self {
         GType::GunShot(gs) => gs.tex_rot_diff(),
         GType::Missile(gm) => gm.tex_rot_diff(),
-        GType::Effect => todo!(),
+        GType::Fragment(gf) => gf.tex_rot_diff(),
     }}
 
     fn update(
@@ -69,6 +70,7 @@ impl GTypeTrait for GType {
             ImgObjInstance, super::super::aim::Aim, 
         >, 
         enemies: &mut EnemyArray, 
+        gcomm: &mut super::gcomm::GCommQueue, 
     ) -> bool { match self {
         GType::GunShot(gs) => gs.update(
             cycle, 
@@ -77,7 +79,8 @@ impl GTypeTrait for GType {
             phys, 
             ferris, 
             aim, 
-            enemies
+            enemies, 
+            gcomm, 
         ),
         GType::Missile(gm) => gm.update(
             cycle, 
@@ -86,9 +89,19 @@ impl GTypeTrait for GType {
             phys, 
             ferris, 
             aim, 
-            enemies
+            enemies, 
+            gcomm, 
         ),
-        GType::Effect => todo!(),
+        GType::Fragment(gf) => gf.update(
+            cycle, 
+            varea, 
+            ident, 
+            phys, 
+            ferris, 
+            aim, 
+            enemies, 
+            gcomm, 
+        ),
     }}
 }
 
@@ -181,5 +194,6 @@ pub trait GTypeTrait {
             ImgObjInstance, super::super::aim::Aim, 
         >, 
         enemies: &mut EnemyArray, 
+        gcomm: &mut super::gcomm::GCommQueue, 
     ) -> bool;
 }

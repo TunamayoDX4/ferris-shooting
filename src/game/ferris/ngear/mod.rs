@@ -12,6 +12,7 @@ use crate::game::enemy::enemy::EnemyArray;
 pub mod array;
 pub mod gtype;
 use gtype::GTypeTrait;
+pub mod gcomm;
 
 /// ギアの物理的な値
 pub struct GearPhys {
@@ -88,6 +89,7 @@ impl GearInstance {
         ferris: Option<&crate::game::ferris::ferris::FerrisBody>, 
         aim: &EntityHolder<ImgObjInstance, super::aim::Aim>, 
         enemies: &mut EnemyArray, 
+        gcomm: &mut gcomm::GCommQueue, 
     ) -> bool {
         let res = self.gb.gt.update(
             cycle, 
@@ -96,7 +98,8 @@ impl GearInstance {
             &mut self.gb.phys, 
             ferris, 
             aim, 
-            enemies
+            enemies, 
+            gcomm, 
         );
         self.gb.phys.update(cycle);
         self.gb.tex_rot += self.gb.tex_rot_speed * cycle.dur;

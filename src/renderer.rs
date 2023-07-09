@@ -101,7 +101,7 @@ impl FSRenderer {
                 'p', 'q', 'r', 's', 
                 't', 'u', 'v', 'w', 
                 'x', 'y', 'z', '{', 
-                '|', '}', '~', '\n', 
+                '|', '}', '~', '\0', 
                 'ｱ', 'ｲ', 'ｳ', 'ｴ', 
                 'ｵ', 'ｶ', 'ｷ', 'ｸ', 
                 'ｹ', 'ｺ', 'ｻ', 'ｼ', 
@@ -117,17 +117,22 @@ impl FSRenderer {
                 'ｧ', 'ｨ', 'ｩ', 'ｪ', 
                 'ｫ', 'ｬ', 'ｭ', 'ｮ', 
                 'ﾞ', 'ﾟ', '､', '｡', 
-                '･', //'', '', '', 
+                '･', '\0', '\0', '\0', 
             ].into_iter()
                 .enumerate()
                 .map(|(i, c)| (
                     c, [16. * (i % 16) as f32, 32. * (i / 16) as f32]
                 ))
-                .map(|(c, s)| (c, font_typing::CharModel {
-                    tex_coord: s,
-                    tex_size: [16., 32.],
-                    base_line: [0., 0.],
-                }))
+                .filter_map(|(c, s)| if c != '\0'{ Some((
+                    c, 
+                    font_typing::CharModel {
+                        tex_coord: s,
+                        tex_size: [16., 32.],
+                        base_line: [0., 0.],
+                    }
+                ))} else {
+                    None
+                })
                 .collect(),
             default: font_typing::CharModel { 
                 tex_coord: [16. * 15., 32. * 5.], 

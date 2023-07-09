@@ -5,7 +5,7 @@ use tm_wg_wrapper::{
     util::simple2d::{physic::{PhysicBody, self}, entity_holder::EntityRefMut}, 
 };
 
-use crate::game::physic::aabb;
+use crate::game::{physic::aabb, ferris::ngear::gcomm::{explode::ExplodeParam, GComm}};
 use crate::game::enemy::{self, enemy::EnemyRef};
 
 use super::GTypeTrait;
@@ -121,6 +121,24 @@ impl MissileGearType {
     pub fn mode(&self) -> MissileHomingMode { match self {
         MissileGearType::LightMissile(_) => MissileHomingMode::ProportionalNavigate,
     }}
+
+    pub fn explode(&self) -> Option<ExplodeParam> { match self {
+        MissileGearType::LightMissile(_) => Some(ExplodeParam { 
+            tex_rot: Some(
+                -360.0 * (std::f32::consts::PI / 180.)
+                .. 360.0 * (std::f32::consts::PI / 180.)
+            ), 
+            frag_count: 96, 
+            frag_diff: Some(-12..12), 
+            frvel_base: 320., 
+            frvel_diff: Some(-640.0..640.0), 
+            frsiz_base: 8., 
+            frsiz_diff: Some(-3.2..3.2), 
+            ltime_base: 1. / 5., 
+            ltime_diff: Some(-1./7.5..1./7.5), 
+            damage_r: 2.
+        }),
+    }}
 }
 impl super::super::GTypeTrait for MissileGearType {
     fn angle_diff(&self) -> Option<std::ops::Range<f32>> {
@@ -154,6 +172,7 @@ impl super::super::GTypeTrait for MissileGearType {
             simple2d::img_obj::ImgObjInstance, crate::game::ferris::aim::Aim, 
         >, 
         enemies: &mut enemy::enemy::EnemyArray, 
+        gcomm: &mut super::super::gcomm::GCommQueue, 
     ) -> bool { 
         let s = self.clone();
         match self {
@@ -223,6 +242,18 @@ impl super::super::GTypeTrait for MissileGearType {
             
                 if let Some(e) = eref {
                     e.give_damage(self.damage());
+                    if let Some(exp) = self.explode()
+                        .map(|param| GComm::Explode { 
+                            param, 
+                            position: phys.position, 
+                            base_vel: [
+                                phys.vel_a / 2. * phys.rotation.cos(), 
+                                phys.vel_a / 2. * phys.rotation.sin(), 
+                            ].into() 
+                        }
+                    ) {
+                        gcomm.push(exp)
+                    }
                     false
                 } else {
                     varea.in_visible(

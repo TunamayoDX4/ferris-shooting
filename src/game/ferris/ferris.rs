@@ -1,3 +1,5 @@
+use tm_wg_wrapper::prelude::nalgebra::Vector2;
+
 use super::*;
 
 pub struct FerrisBody {
@@ -126,16 +128,22 @@ impl Ferris {
         } * (std::f32::consts::PI / 180.) * cycle.dur;
 
         if self.control.shoot_kb.is_triggered() || self.control.shoot_mb.is_triggered() {
-            /*self.gg.shoot(
-                self.body.position, 
-                self.body.velocity, 
-                self.body.rotation + std::f32::consts::PI * 0.5, 
-                gears, 
-                None, 
-            );*/
             self.gg2.shoot(
                 &self.body, 
-                gears2
+                gears2, 
+                if !self.control.time_fuze.is_triggered() {
+                    None
+                } else {
+                    aim.map(
+                        |aim| {
+                            let pos = aim.pbody.position;
+                            let dist = pos - self.body.position;
+                            let dist = (dist.x.powi(2) + dist.y.powi(2)).sqrt();
+                            let gv = self.gg2.gt.shoot_shell().vel_default();
+                            dist / gv
+                        }
+                    )
+                }, 
             );
         }
         if self.control.sg_ch.get_trig_count() == 1 { match self.control.sg_ch.get_mode() {
@@ -156,9 +164,9 @@ impl Ferris {
             )
         }
 
-        if let Some(aim) = aim { if self.control.auto_track.is_latch_on() {
+        if let Some(aim) = aim { if !self.control.manual_track.is_latch_on() {
             let angle = {
-                let distance = self.body.position - (aim.pbody.position + if let aim::AimState::Tracking { 
+                let distance: Vector2<f32> = self.body.position - (aim.pbody.position + if let aim::AimState::Tracking { 
                     vec, 
                     .. 
                 } = aim.state { vec } else { [0., 0.].into() });
@@ -179,7 +187,6 @@ impl Ferris {
         }}
 
         self.body.update(cycle, varea);
-        //self.gg.update(cycle);
         self.gg2.update(cycle);
         self.ml.update(cycle);
     }
@@ -197,7 +204,8 @@ pub struct Control {
     /// 撃つギアの切り替え
     pub sg_ch: RevCtrl, 
     pub auto_aim: Trigger, 
-    pub auto_track: Latch, 
+    pub manual_track: Latch, 
+    pub time_fuze: Trigger, 
 
 }
 impl Control {
@@ -213,12 +221,13 @@ impl Control {
         VirtualKeyCode::Q => self.rot_left.input(RevMode::Forward, state), 
         VirtualKeyCode::E => self.rot_left.input(RevMode::Backward, state), 
         VirtualKeyCode::Z => self.sg_ch.input(RevMode::Backward, state), 
-        VirtualKeyCode::X => self.auto_track.trigger(state), 
+        VirtualKeyCode::X => self.manual_track.trigger(state), 
         VirtualKeyCode::C => self.sg_ch.input(RevMode::Forward, state), 
         VirtualKeyCode::R => {}, 
         VirtualKeyCode::F => self.shoot_ms.trigger(state), 
         VirtualKeyCode::V => {}, 
         VirtualKeyCode::Space => self.shoot_kb.trigger(state), 
+        VirtualKeyCode::G => self.time_fuze.trigger(state), 
         _ => {}, 
     }}
 
@@ -251,6 +260,7 @@ impl Control {
         self.shoot_ms.update();
         self.sg_ch.update();
         self.auto_aim.update();
-        self.auto_track.update();
+        self.manual_track.update();
+        self.time_fuze.update();
     }
 }

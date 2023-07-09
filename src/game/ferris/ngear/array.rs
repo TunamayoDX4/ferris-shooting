@@ -34,11 +34,13 @@ pub struct GearInstances {
         ImgObjInstance, 
         super::GearInstance, 
     >, 
+    gcomm: super::gcomm::GCommQueue, 
 }
 impl GearInstances {
     pub fn new() -> Self { Self {
         ident: GearIdentMaster(0),
         gears: entity_holder::EntityArray::new([]),
+        gcomm: super::gcomm::GCommQueue::new(), 
     }}
 
     pub fn push_gb(&mut self, gb: super::GearBody) -> GearRef {
@@ -63,12 +65,20 @@ impl GearInstances {
         >, 
         enemies: &mut crate::game::enemy::enemy::EnemyArray, 
     ) {
+        self.gcomm.execute(
+            &mut self.ident, 
+            &mut self.gears, 
+            ferris, 
+            aim.get(), 
+            enemies, 
+        );
         self.gears.retain(|_, gear| gear.update(
             cycle, 
             varea, 
             ferris, 
             aim, 
             enemies, 
+            &mut self.gcomm, 
         ));
     }
 

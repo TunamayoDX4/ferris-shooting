@@ -1,0 +1,13 @@
+[
+    {"lang_type": "ENGLISH(US)"}, 
+    {"title_newgame": "NEW GAME"}, 
+    {"title_loadgame": "LOAD GAME"}, 
+    {"title_config": "CONFIG"}, 
+    {"title_credit": "CREDIT"}, 
+    {"title_exit": "EXIT"}, 
+    {"config_audio_vol": "AUDIO VOLUME"}, 
+    {"config_sound_vol": "SE VOLUME"}, 
+    {"config_show_debug": "SHOW DEBUG"}, 
+    {"config_language": "LANGUAGE"}, 
+    {"config_quit": "QUIT"}
+]
